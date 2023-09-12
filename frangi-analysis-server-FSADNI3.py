@@ -8,7 +8,14 @@ import nibabel as nib
 from matplotlib import pyplot as plt
 from scipy import stats
 
-## catch errors, make error message
+## to do:
+    # catch errors, make error message
+    # make it run for one subject ?
+    # split into mask making, frangi analysis, and graphing
+    # include a line to point to ADNI folder directly and save results in your own folder
+    # fix WMH code so registration is correct
+
+
 
 
 ### commands ###
@@ -44,6 +51,13 @@ fs_mriconvert = '/opt/freesurfer/bin/mri_convert'
 fs_asegtable = '/opt/freesurfer/bin/asegstats2table'
 
 
+# copying (?) ADNI files into our research folder: 
+# ADNI3_FS_path = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects/[insert subject]/mri'
+# ADNI3_FS_stats = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects/[insert subject]/stats'
+# your_folder = '/m/Researchers/SerenaT/ADNI3_samples'
+# some file that contains a list of subject IDs and includes info about AD or CN or MCI status:
+    # ADNI_subjid_csv = '/m/Researchers/SerenaT/ADNI_subjid'
+    # 
 
 
 path_subj = '/Users/nanatang/VAserversim/m/Researchers/SerenaT/ADNI_samples'
@@ -91,12 +105,9 @@ for c in subject_id_cn:
 t1_list = subjects_t1_ad+subjects_t1_cn
 mask_list = subject_mask_ad+subject_mask_cn
 
-
-
-t1_list_preproc = [] # list of preprocessed T1: brain extracted, white / grey matter extracted, ANTs preprocessed
 finalmask_list = []
 
-# 8/22/23: new add - regional results
+# #8/22/23: new add - regional results
 # wm_list = []
 # bg_list = []
 
@@ -174,46 +185,6 @@ for maskmgz in mask_list:
     #sys.exit()
 
 
-#print(t1_list_preproc)
-
-
-
-#print('subj list: '+subjects)
-#t1_list_preproc = ['/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-4-ad/sub-4-ad-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-1-ad/sub-1-ad-betbrain.nii.gz', \
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-5-ad/sub-5-ad-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-10-cn/sub-10-cn-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-11-cn/sub-11-cn-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-7-cn/sub-7-cn-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-12-cn/sub-12-cn-betbrain.nii.gz', \
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-2-ad/sub-2-ad-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-6-ad/sub-6-ad-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-9-cn/sub-9-cn-betbrain.nii.gz',\
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-8-cn/sub-8-cn-betbrain.nii.gz', \
-                    # '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-3-ad/sub-3-ad-betbrain.nii.gz']
-
-# mask_list = ['/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-4-ad/sub-4-ad-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-1-ad/sub-1-ad-allmask-closed.nii.gz', \
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-5-ad/sub-5-ad-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-10-cn/sub-10-cn-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-11-cn/sub-11-cn-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-7-cn/sub-7-cn-allmask-closed.nii.gz', \
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-12-cn/sub-12-cn-allmask-closed.nii.gz', \
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-2-ad/sub-2-ad-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-6-ad/sub-6-ad-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-9-cn/sub-9-cn-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-8-cn/sub-8-cn-allmask-closed.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/ADNI3_samples/sub-3-ad/sub-3-ad-allmask-closed.nii.gz']
-
-# gt_list = ['/Users/nanatang/Documents/GradResearch/frangi-valdo/sub-4-ad/sub-101_space-T1_desc-Rater1_PVSSeg.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/frangi-valdo/sub-1-frangi/sub-8_space-T1_desc-Rater1_PVSSeg.nii.gz', \
-#                     '/Users/nanatang/Documents/GradResearch/frangi-valdo/sub-105-frangi/sub-105_space-T1_desc-Rater1_PVSSeg.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/frangi-valdo/sub-102-frangi/sub-102_space-T1_desc-Rater1_PVSSeg.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/frangi-valdo/sub-103-frangi/sub-103_space-T1_desc-Rater1_PVSSeg.nii.gz',\
-#                     '/Users/nanatang/Documents/GradResearch/frangi-valdo/sub-104-frangi/sub-104_space-T1_desc-Rater1_PVSSeg.nii.gz']
-
-#for subj,m,wmh,gt in zip(t1_list_preproc,mask_list,wmh_list,gt_list):
-
 #sys.exit()
 ad_count_list = []
 ad_vol_list = []
@@ -229,6 +200,8 @@ bg_ad_count_list = []
 bg_ad_vol_list = []
 bg_cn_count_list = []
 bg_cn_vol_list = []
+
+final_frangi_list = []
 
 # for subj,m,m_wm,m_bg,subj_name in zip(t1_list,mask_list,wm_list,bg_list,subjects):
 for subj,m in zip(t1_list,finalmask_list):
@@ -281,11 +254,19 @@ for subj,m in zip(t1_list,finalmask_list):
               --mask {m} \
               --threshold {t} \
               --output {frangi_thresholded}')
+    
+    final_frangi_list.append(frangi_thresholded)
 
     print('subject '+ str.split(subj,'/')[-2] + ' total frangi done!')
 
 
-    ###########-------stats calculation------#################    
+
+    ###########-------stats calculation------#################
+
+
+for frangi_thresholded in final_frangi_list:
+        
+    subj_folder = '/'+'/'.join(str.split(frangi_thresholded,'/')[1:-1])
 
     # pvs count
     pvsseg_comp = os.path.join(subj_folder, 'frangi_comp.nii.gz')
@@ -295,19 +276,16 @@ for subj,m in zip(t1_list,finalmask_list):
 
     # mask component first
     os.system(f'{qit} MaskComponents \
-          --input {frangi_thresholded} \
-          --output {pvsseg_comp}')
-    # os.system(f'{qit} MaskComponents \
-    #       --input {gt} \
-    #       --output {gt_comp}')
+        --input {frangi_thresholded} \
+        --output {pvsseg_comp}')
     
 
     # count volume and number of pvs
     os.system(f'{qit} MaskMeasure \
-          --input {pvsseg_comp} \
-          --comps \
-          --counts \
-          --output {pvsseg_stats}')
+        --input {pvsseg_comp} \
+        --comps \
+        --counts \
+        --output {pvsseg_stats}')
 
     # make list
     stat = pd.read_csv(pvsseg_stats,index_col=0)
