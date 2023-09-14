@@ -23,10 +23,12 @@ from scipy import stats
 qit = '/opt/qit/bin/qit'
 
 #ANTs commands
+os.environ['ANTSVERSION'] = 'ants-2017-12-07'
 bias_command = '/opt/ants/bin/N4BiasFieldCorrection'
 denoise_command = '/opt/ants/bin/DenoiseImage'
 
 #FSL commands
+os.environ['FSLVERSION']='6.0.0' 
 fsl_segment = '/opt/fsl/bin/fast'
 fsl_brain = '/opt/fsl/bin/bet'
 fsl_deepgrey = '/opt/fsl/bin/run_first_all'
@@ -47,6 +49,7 @@ fsl_maths = '/opt/fsl/bin/fslmaths'
 
 
 #freesurfer commands
+os.environ['FSVERSION']='6.0.0' 
 fs_mriconvert = '/opt/freesurfer/bin/mri_convert'
 fs_asegtable = '/opt/freesurfer/bin/asegstats2table'
 
@@ -60,7 +63,8 @@ fs_asegtable = '/opt/freesurfer/bin/asegstats2table'
     # 
 
 
-path_subj = '/Users/nanatang/VAserversim/m/Researchers/SerenaT/ADNI_samples'
+#path_subj = '/Users/nanatang/VAserversim/m/Researchers/SerenaT/ADNI_samples'
+path_subj = '/m/Researchers/SerenaT/ADNI3_samples'
 ad_folder = os.path.join(path_subj,'AD')
 cn_folder = os.path.join(path_subj,'CN')
 
