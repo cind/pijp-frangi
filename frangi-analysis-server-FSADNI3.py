@@ -13,7 +13,9 @@ from scipy import stats
 
 #for server
 #qit command
-qit = '/opt/qit/qit-build-linux-latest/bin/qit'
+os.environ['JAVA_HOME']='/opt/qit/jdk-12.0.2'
+os.environ['PATH'] = '$JAVA_HOME/bin:$PATH'
+qit = '/opt/qit/bin/qit'
 
 #ANTs commands
 os.environ['ANTSVERSION'] = 'ants-2017-12-07'
@@ -43,7 +45,7 @@ fsl_maths = '/opt/fsl/bin/fslmaths'
 
 
 #freesurfer commands
-os.environ['FSVERSION']='6.0.0' 
+os.environ['FSVERSION']='7.3.2' 
 fs_mriconvert = '/opt/freesurfer/bin/mri_convert'
 fs_asegtable = '/opt/freesurfer/bin/asegstats2table'
 
@@ -89,7 +91,7 @@ fs_asegtable = '/opt/freesurfer/bin/asegstats2table'
 # working_dir = '/Users/nanatang/VAserversim/m/Researchers/SerenaT/ADNI_samples/frangi'
 
 # #for server:
-data_dir = '/m/InProcess/External/ADNI_FSdn/Freesurfer/subjects/'
+data_dir = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects/'
 working_dir = '/m/InProcess/External/ADNI3/ADNI3_frangi/pijp-frangi'
 researcher_dir = '/m/Researchers/SerenaT/'
 
