@@ -5,6 +5,15 @@ import argparse
 import textwrap
 import string
 
+import numpy as np
+import shutil
+import pandas as pd
+import sys
+import gzip
+import nibabel as nib
+from matplotlib import pyplot as plt
+from scipy import stats
+
 # Before loading NUMPY: HACK to avoid seg fault on some hosts.
 #os.environ["OMP_NUM_THREADS"] = "1"
 
@@ -30,14 +39,27 @@ def get_case_dir(project, code):
 
 
 class BaseStep(Step):
-    def __init__(self, project, code, args):
-        super().__init__(project, code, args)
+    def __init__(self, project, data, code, args):
+        super().__init__(data, project, code, args)
         # Put all of your name space variables here, e.g. image file names.
-        self.project = project
+        self.data = 'ADNI3_FSdn/Freesurfer/subjects'    # this will be changed when i run this on Raw: ADNI3_FSdn/Raw
+        self.project = 'ADNI3_frangi'
+
+        self.AD = get_case_dir(self.project,'AD')   # so this will be: ADNI3_frangi/pijp_frangi/AD
+        self.CN = get_case_dir(self.project,'CN')
+        self.MCI = get_case_dir(self.project,'MCI')
+
+        
+
         self.code = code
+        
+        
         self.working_dir = get_case_dir(self.project, self.code)
-        self.output = os.path.join(self.working_dir, self.code + ".someOutput.nii.gz")
-	self.mgz = 
+
+        # all nii converted
+        self.t1 = os.path.join(self.working_dir, self.code + "-T1.nii.gz")
+        self.wmdgmask = os.path.join(self.working_dir, self.code + "-wmdgmask.nii.gz")
+        self.wmparcmask = os.path.join(self.working_dir, self.code + "-wmdgmask.nii.gz")
 	
         # If you need to get time point, site id, subject number, or other meta data
         # that is stored in the series code, use this object.
@@ -111,6 +133,49 @@ class BaseStep(Step):
         return output
 
 
+class commands(BaseStep):
+    # example:
+    # fs(input,output,func) --> at the moment, I have it so this already includes running the command 
+
+    exportfs = '6.0.0'
+    exportants = 'ants-2017-12-07'
+    exportfsl = '6.0.0'
+    exportmatlab = 'R2019a'
+
+    def qit(self,input,output,func):
+        cmd = f'' 
+        _run_cmd(self,cmd,script_name=func)
+
+        
+    def fs(self,input,output,func):
+        cmd = f'export FSVERSION={self.exportfs} && {func} {input} {output}'
+        _run_cmd(self,cmd,script_name=func)
+    
+    def ants(self,input,output,func):
+        cmd = f'export ANTSVERSION= {self.exportants} && {func} {input} {output}'
+        _run_cmd(self,cmd,script_name=func)
+
+    
+    def fsl(self,input,output,func):
+        cmd = f'export FSLVERSION= {self.exportfsl} && {func} {input} {output}'
+        _run_cmd(self,cmd,script_name=func)
+
+    
+    #def matlab(input,output,func):
+        # # #LST commands, addpath
+        # # os.environ['MATLAB_VERSION']='R2019a' 
+        # # matlab = '/opt/mathworks/bin/matlab'
+        # # addpath = "\"addpath('/m/Researchers/SerenaT/spm12');exit\""
+        # # os.system(f'{matlab} \
+        # #             -nodesktop \
+        # #             -noFigureWindows \
+        # #             -nosplash \
+        # #             -r \
+        # #             {addpath}')
+
+    
+    
+
 class Stage(BaseStep):
     process_name = PROCESS_TITLE
     step_name = 'stage'
@@ -118,19 +183,52 @@ class Stage(BaseStep):
     cpu = 1
     mem = '1G'
 
+
+
+
     def __init__(self, project, code, args):
         super().__init__(project, code, args)
         self.next_step = None
+        
 
-    def import(self):
-         fs_root = os.path.join(get_project_dir(project), 'Freesurfer')
-	 raw_mgz = os.path.join(fs_root,'subjects',self.code,'mri','T1.mgz')
-	 new_mgz = os.path.join(self.working_dir,self.code + '.T1.nii.gz')
-	 cmd = f'export FSVERSION=6.0.0 && mri_convert {raw_mgz} {new_mgz}'
+    # def import(self):
+    #     fs_root = os.path.join(get_project_dir(project), 'Freesurfer')
+    #     raw_mgz = os.path.join(fs_root,'subjects',self.code,'mri','T1.mgz')
+    #     new_mgz = os.path.join(self.working_dir,self.code + '.T1.nii.gz')
+    #     _run_cmd(self, qit(in,out), script_name='T1_convert_mgz')
 
-	 _run_cmd(self, cmd, script_name='T1_convert_mgz')
-    def run(self):
-	self.import()
+    # def run(self):
+	#     self.import()
+    
+    
+    def mgz_convert(self,mgz,nii):
+        commands.fs(mgz,nii,'mri_convert')
+    
+    def make_mask(self,maskmgz,subj_folder):
+        img = nib.load(maskmgz)
+        data = img.get_fdata()
+        mask = np.zeros(np.shape(data))
+
+        seg = [2,10,11,12,13,26,41,49,50,51,52,58]
+        wmh = 77    # do we need this if it should already not be included in the others? or is it included? or maybe it doesn't matter since 
+                    # she wants me to use SPM anyway
+
+        for m in seg:
+            mask[data == m] = m
+
+        maskimg = nib.Nifti1Image(mask,img.affine)
+        nib.save(maskimg,os.path.join(subj_folder,'wmdg-mask.nii.gz'))
+        masknii = os.path.join(subj_folder,'wmdg-mask.nii.gz')
+
+        return masknii
+    
+    
+
+
+
+    # all of your methods:
+
+
 
     def _parse_args(self, args):
         """
@@ -180,6 +278,76 @@ class Stage(BaseStep):
         Start your code here. Create "helper" methods to keep the code clean.
         """
         pass
+
+
+class Analyze(Stage):
+    def __init__(self, project, code, args):
+        super().__init__(project, code, args)
+        self.next_step = None
+
+    def frangi_analysis(t1,mask,frangi_thresholded,subj_folder):
+        # hessian calculation
+        hes =  os.path.join(subj_folder,'hessian.nii.gz')
+        os.system(f'{qit} VolumeFilterHessian \
+                --input {t1} \
+                --mask {mask} \
+                --mode Norm \
+                --output {hes}')
+
+        hes_stats = os.path.join(subj_folder,'hessianstats.csv')
+        os.system(f'{qit} VolumeMeasure \
+                --input {hes} \
+                --output {hes_stats}')
+
+        hes_csv = pd.read_csv(hes_stats,index_col=0)
+        half_max = hes_csv.loc['max'][0]/2
+
+
+        # frangi calculation
+        frangi_mask = os.path.join(subj_folder,'frangimask.nii.gz')
+        os.system(f'{qit} VolumeFilterFrangi \
+                --input {t1} \
+                --mask {mask} \
+                --low {0.1} \
+                --high {5.0} \
+                --scales {10} \
+                --gamma {half_max} \
+                --dark \
+                --output {frangi_mask}')
+
+        # threshold calculation
+        t = 0.0025
+
+        os.system(f'{qit} VolumeThreshold \
+                --input {frangi_mask} \
+                --mask {mask} \
+                --threshold {t} \
+                --output {frangi_thresholded}')
+    
+    def icv_calc(aseg_raw,subj_folder):
+        aseg_file = os.path.join(subj_folder,'asegstats.csv')
+
+        os.system(f'{fs_asegtable} \
+                    -i {aseg_raw} \
+                    -d comma \
+                    -t {aseg_file}')
+        
+        stat = pd.read_csv(aseg_file)
+        icv = stat['EstimatedTotalIntrCranialVol'][0]
+        return icv
+    
+    def pvs_stats(frangi,comp,stats):
+        # mask component first
+        os.system(f'{qit} MaskComponents \
+            --input {frangi} \
+            --output {comp}')
+        
+        # count volume and number of pvs
+        os.system(f'{qit} MaskMeasure \
+            --input {comp} \
+            --comps \
+            --counts \
+            --output {stats}')
 
 
 def run():

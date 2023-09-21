@@ -8,17 +8,10 @@ import nibabel as nib
 from matplotlib import pyplot as plt
 from scipy import stats
 
-## to do:
-    # catch errors, make error message
-    # make it run for one subject ?
-    # split into mask making, frangi analysis, and graphing
-    # include a line to point to ADNI folder directly and save results in your own folder
-    # fix WMH code so registration is correct
 
+###---------------------------commands---------------------------###
 
-
-
-### commands ###
+#for server
 #qit command
 qit = '/opt/qit/bin/qit'
 
@@ -38,6 +31,7 @@ fsl_maths = '/opt/fsl/bin/fslmaths'
 
 
 # #LST commands, addpath
+# os.environ['MATLAB_VERSION']='R2019a' 
 # matlab = '/opt/mathworks/bin/matlab'
 # addpath = "\"addpath('/m/Researchers/SerenaT/spm12');exit\""
 # os.system(f'{matlab} \
@@ -53,74 +47,148 @@ os.environ['FSVERSION']='6.0.0'
 fs_mriconvert = '/opt/freesurfer/bin/mri_convert'
 fs_asegtable = '/opt/freesurfer/bin/asegstats2table'
 
+# for your computer
+#qit command
+#qit command
+# qit = '/Users/nanatang/anaconda3/envs/pvssegment/bin/qit-build-mac-latest/bin/qit'
 
-# copying (?) ADNI files into our research folder: 
-# ADNI3_FS_path = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects/[insert subject]/mri'
-# ADNI3_FS_stats = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects/[insert subject]/stats'
-# your_folder = '/m/Researchers/SerenaT/ADNI3_samples'
-# some file that contains a list of subject IDs and includes info about AD or CN or MCI status:
-    # ADNI_subjid_csv = '/m/Researchers/SerenaT/ADNI_subjid'
-    # 
+# #ANTs commands
+# bias_command = '/Users/nanatang/anaconda3/envs/pvssegment/build/ANTS-build/Examples/N4BiasFieldCorrection'
+# denoise_command = '/Users/nanatang/anaconda3/envs/pvssegment/build/ANTS-build/Examples/DenoiseImage'
 
-
-#path_subj = '/Users/nanatang/VAserversim/m/Researchers/SerenaT/ADNI_samples'
-path_subj = '/m/Researchers/SerenaT/ADNI3_samples'
-ad_folder = os.path.join(path_subj,'AD')
-cn_folder = os.path.join(path_subj,'CN')
-
-ad_folder_ls = os.listdir(ad_folder)
-cn_folder_ls = os.listdir(cn_folder)
-
-# the "i for i in __ if i,startswith(___) is only meant to list out the folders and get rid of things that aren't folders you want (like .DStore)"
-
-subject_id_ad = [i for i in ad_folder_ls if i.startswith('ADNI')]
-subject_id_cn = [c for c in cn_folder_ls if c.startswith('ADNI')]
+# #FSL commands
+# fsl_segment = '/Users/nanatang/Documents/GradResearch/fsl/bin/fast'
+# fsl_brain = '/Users/nanatang/Documents/GradResearch/fsl/bin/bet'
+# fsl_deepgrey = '/Users/nanatang/Documents/GradResearch/fsl/bin/run_first_all'
+# fsl_firstflirt = '/Users/nanatang/Documents/GradResearch/fsl/bin/first_flirt'
+# fsl_runfirst = '/Users/nanatang/Documents/GradResearch/fsl/bin/run_first'
+# fsl_maths = '/Users/nanatang/Documents/GradResearch/fsl/bin/fslmaths'
 
 
-subjects_t1_ad = []
-subjects_t1_cn = []
-subject_mask_ad = []
-subject_mask_cn = []
+# # #LST commands, addpath
+# # os.environ['MATLAB_VERSION']='R2019a' 
+# # matlab = '/opt/mathworks/bin/matlab'
+# # addpath = "\"addpath('/m/Researchers/SerenaT/spm12');exit\""
+# # os.system(f'{matlab} \
+# #             -nodesktop \
+# #             -noFigureWindows \
+# #             -nosplash \
+# #             -r \
+# #             {addpath}')
 
-for a in subject_id_ad:
-    t1 = os.path.join(path_subj,ad_folder,a,'T1.mgz')
-    t1_convert = os.path.join(path_subj,ad_folder,a,'T1.nii.gz')
-    os.system(f'{fs_mriconvert}  \
-                {t1} \
-                {t1_convert}')
 
-    subjects_t1_ad.append(t1_convert)
+# #freesurfer commands
+# fs_mriconvert = '/Applications/freesurfer/7.3.2/bin/mri_convert'
+# fs_asegtable = '/Applications/freesurfer/7.3.2/bin/asegstats2table'
 
-    mask = os.path.join(path_subj,ad_folder,a,'aparc+aseg.mgz')
-    subject_mask_ad.append(mask)
 
-for c in subject_id_cn:
-    t1 = os.path.join(path_subj,cn_folder,c,'T1.mgz')
-    t1_convert = os.path.join(path_subj,cn_folder,c,'T1.nii.gz')
-    os.system(f'{fs_mriconvert}  \
-                {t1} \
-                {t1_convert}')
-    
-    subjects_t1_cn.append(t1_convert)
+####---------------------organizing data into AD/CN folders-------------------##########
 
-    mask = os.path.join(path_subj,cn_folder,c,'aparc+aseg.mgz')
-    subject_mask_cn.append(mask)
+# #for your computer: 
+# data_dir = '/Users/nanatang/VAserversim/m/Researchers/SerenaT/ADNI_samples/'
+# working_dir = '/Users/nanatang/VAserversim/m/Researchers/SerenaT/ADNI_samples/frangi'
 
-t1_list = subjects_t1_ad+subjects_t1_cn
-mask_list = subject_mask_ad+subject_mask_cn
+# #for server:
+data_dir = '/m/InProcess/External/ADNI_FSdn/Freesurfer/subjects/'
+working_dir = '/m/InProcess/External/ADNI3/ADNI3_frangi/pijp-frangi'
+researcher_dir = '/m/Researchers/SerenaT/ADNI3_files'
+
+os.makedirs(working_dir,exist_ok=True)
+os.makedirs(researcher_dir,exist_ok=True)
+#data_dir = '/m/Researchers/SerenaT/ADNI3_samples'
+
+ref_csv = os.path.join(researcher_dir,'ADNI3_T1_namefilter.csv')
+ref_list = pd.read_csv(ref_csv)
+folders = os.listdir(data_dir)
+subjects = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir,d)) & d.startswith('ADNI')]
+subjects = subjects[0:20]
+
+# # make research group folders
+os.makedirs(os.path.join(working_dir,'AD'),exist_ok=True)
+os.makedirs(os.path.join(working_dir,'CN'),exist_ok=True)
+os.makedirs(os.path.join(working_dir,'MCI'),exist_ok=True)
+
+# # replace years with y0__
+replacements = {'ADNI Screening':'y00','ADNI3 Year 1 Visit': 'y01', 'ADNI3 Year 2 Visit': 'y02','ADNI3 Year 3 Visit': 'y03','ADNI3 Year 4 Visit': 'y04'}
+ref_list['Visit'] = ref_list['Visit'].map(replacements).fillna(ref_list['Visit'])
+
+
+inds = []
+researchgroup = []
+t1_list = []
+mask_list = []
+wmparc_list = []
+icv_list = []
+
+def mgz_convert(mgz,nii):
+   os.system(f'{fs_mriconvert}  \
+                {mgz} \
+                {nii}')
+
+def aseg_convert(aseg_raw,aseg_file):
+    os.system(f'{fs_asegtable} \
+                -i {aseg_raw} \
+                -d comma \
+                -t {aseg_file}')
+
+for subj in subjects:
+    for id,visit in zip(ref_list['Subject ID'],ref_list['Visit']):
+        if (id in subj) & (visit in subj):
+            ind = ref_list.index[(ref_list['Subject ID']==id) & (ref_list['Visit'] == visit)][0]
+            if ind in inds:
+                pass
+            else:
+                inds.append(ind)
+                rg = ref_list.loc[ind]['Research Group']
+                researchgroup.append(rg)
+                
+                os.makedirs(os.path.join(working_dir,rg,subj),exist_ok=True)
+
+                # # your computer
+                # t1 = os.path.join(data_dir,subj,'T1.mgz')
+                # t1_convert = os.path.join(working_dir,rg,subj,'T1.nii.gz')
+                # mgz_convert(t1,t1_convert)
+                # t1_list.append(t1_convert)
+
+                # mask = os.path.join(data_dir,subj,'aparc+aseg.mgz')
+                # mask_dest = os.path.join(working_dir,rg,subj,'aparc+aseg.mgz')
+                # shutil.copy(mask,mask_dest)
+                # mask_list.append(mask_dest)
+
+                # wm = os.path.join(data_dir,subj,'wmparc.mgz')
+                # wm_convert = os.path.join(working_dir,rg,subj,'wmparc.nii.gz')
+                # mgz_convert(wm,wm_convert)
+                # wmparc_list.append(wm_convert)
+
+                # server
+                t1 = os.path.join(data_dir,subj,'mri','T1.mgz')
+                t1_convert = os.path.join(working_dir,rg,subj,'T1.nii.gz')
+                mgz_convert(t1,t1_convert)
+                t1_list.append(t1_convert)
+
+                mask = os.path.join(data_dir,subj,'mri','aparc+aseg.mgz')
+                mask_dest = os.path.join(working_dir,rg,subj,'aparc+aseg.mgz')
+                shutil.copy(mask,mask_dest)
+                mask_list.append(mask_dest)
+
+                wm = os.path.join(data_dir,subj,'wmparc.mgz')
+                wm_convert = os.path.join(working_dir,rg,subj,'wmparc.nii.gz')
+                mgz_convert(wm,wm_convert)
+                wmparc_list.append(wm_convert)
+
+                icv = os.path.join(data_dir,subj,'stats','aseg.stats')
+                icv_convert = os.path.join(working_dir,rg,subj,'asegstats.csv')
+                aseg_convert(icv,icv_convert)
+                icv_list.append(icv_convert)
+
+                
+
+
+##############------------------------------------make mask list------------------------################
 
 finalmask_list = []
 
-# #8/22/23: new add - regional results
-# wm_list = []
-# bg_list = []
-
-for maskmgz in mask_list:
-
-    subj_folder = '/'+'/'.join(str.split(maskmgz,'/')[1:-1])
-
-    # make mask with: white matter + deep grey + no WMH (according to fs) --> still need to incorporate WMH from SPM
-
+def make_mask(maskmgz,subj_folder):
     img = nib.load(maskmgz)
     data = img.get_fdata()
     mask = np.zeros(np.shape(data))
@@ -134,9 +202,18 @@ for maskmgz in mask_list:
 
     maskimg = nib.Nifti1Image(mask,img.affine)
     nib.save(maskimg,os.path.join(subj_folder,'wmdg-mask.nii.gz'))
-    output_mask = os.path.join(subj_folder,'wmdg-mask.nii.gz')
+    masknii = os.path.join(subj_folder,'wmdg-mask.nii.gz')
 
-   
+    return masknii
+
+
+for maskmgz in mask_list:
+
+    subj_folder = '/'+'/'.join(str.split(maskmgz,'/')[1:-1])
+
+    # make mask with: white matter + deep grey + no WMH (according to fs) --> still need to incorporate WMH from SPM
+    output_mask = make_mask(maskmgz,subj_folder)
+
     #fill
     # step 4
     final_mask = os.path.join(subj_folder,'closed-mask.nii.gz')
@@ -154,34 +231,6 @@ for maskmgz in mask_list:
 
     finalmask_list.append(final_mask)
 
-    # ####--------wm mask---------######
-    # wmmask = os.path.join(subj_folder,subj_name+'-wmmask.nii.gz')
-    # lwm = os.path.join(subj_folder,'l-wm.nii.gz')
-    # rwm = os.path.join(subj_folder,'r-wm.nii.gz')
-    # os.system(f'{qit} MaskUnion \
-    #           --left {lwm} \
-    #           --right {rwm} \
-    #           --output {wmmask}')
-    # os.system(f'{qit} MaskClose \
-    #           --input {wmmask} \
-    #           --num {1} \
-    #           --output {wmmask}')
-
-    # wm_list.append(wmmask)
-
-
-    # ####--------bg mask---------######
-    # bgmask = os.path.join(subj_folder,subj_name+'-bgmask.nii.gz')
-    # os.system(f'{qit} MaskSet \
-    #               --input {final_mask} \
-    #               --mask {wmmask} \
-    #               --label {0} \
-    #               --output {bgmask}')
-
-    
-    # bg_list.append(bgmask)
-    
-
     print('masks done!')
 
     print('preproc done for '+str.split(maskmgz,'/')[-2]+'!')
@@ -190,36 +239,16 @@ for maskmgz in mask_list:
 
 
 #sys.exit()
-ad_count_list = []
-ad_vol_list = []
-cn_count_list = []
-cn_vol_list = []
 
-wm_ad_count_list = []
-wm_ad_vol_list = []
-wm_cn_count_list = []
-wm_cn_vol_list = []
 
-bg_ad_count_list = []
-bg_ad_vol_list = []
-bg_cn_count_list = []
-bg_cn_vol_list = []
+##############------------------------------------frangi filtering------------------------################
 
-final_frangi_list = []
-
-# for subj,m,m_wm,m_bg,subj_name in zip(t1_list,mask_list,wm_list,bg_list,subjects):
-for subj,m in zip(t1_list,finalmask_list):
-
- 
-    subj_folder = '/'+'/'.join(str.split(subj,'/')[1:-1])
-
-    ####------total brain calculation------#####
-
+def frangi_analysis(t1,mask,threshold,frangi_thresholded,subj_folder):
     # hessian calculation
     hes =  os.path.join(subj_folder,'hessian.nii.gz')
     os.system(f'{qit} VolumeFilterHessian \
-              --input {subj} \
-              --mask {m} \
+              --input {t1} \
+              --mask {mask} \
               --mode Norm \
               --output {hes}')
 
@@ -235,8 +264,8 @@ for subj,m in zip(t1_list,finalmask_list):
     # frangi calculation
     frangi_mask = os.path.join(subj_folder,'frangimask.nii.gz')
     os.system(f'{qit} VolumeFilterFrangi \
-              --input {subj} \
-              --mask {m} \
+              --input {t1} \
+              --mask {mask} \
               --low {0.1} \
               --high {5.0} \
               --scales {10} \
@@ -244,247 +273,120 @@ for subj,m in zip(t1_list,finalmask_list):
               --dark \
               --output {frangi_mask}')
 
-
-    ############# insert IQR scaling
-
-
     # threshold calculation
-    # for now, set threshold to optimal threshold you found with sub-101 with bias / denoise 
-    t = 0.0025
 
-    frangi_thresholded = os.path.join(subj_folder,'frangimask-thresholded.nii.gz')
     os.system(f'{qit} VolumeThreshold \
               --input {frangi_mask} \
-              --mask {m} \
+              --mask {mask} \
               --threshold {t} \
               --output {frangi_thresholded}')
     
+final_frangi_list = []
+final_frangi_list_wm = []
+# for subj,m,m_wm,m_bg,subj_name in zip(t1_list,mask_list,wm_list,bg_list,subjects):
+for subj,m,wmparc in zip(t1_list,finalmask_list,wmparc_list):
+
+    subj_folder = '/'+'/'.join(str.split(subj,'/')[1:-1])
+
+    ####------total brain calculation------#####
+    frangi_thresholded = os.path.join(subj_folder,'frangimask-thresholded.nii.gz')
+    frangi_analysis(subj,m,0.0025,frangi_thresholded,subj_folder)
     final_frangi_list.append(frangi_thresholded)
+
+    frangi_thresholded_wm = os.path.join(subj_folder,'frangimask-thresholded_wm.nii.gz')
+    frangi_analysis(subj,wmparc,0.0002,frangi_thresholded_wm,subj_folder)
+    final_frangi_list_wm.append(frangi_thresholded_wm)
 
     print('subject '+ str.split(subj,'/')[-2] + ' total frangi done!')
 
 
 
-    ###########-------stats calculation------#################
+##############------------------------------------stats calculation------------------------################
 
 
-for frangi_thresholded in final_frangi_list:
+ 
+# icv_list = []
+volpvs_list = []
+volpvs_list_wm = []
+countpvs_list = []
+countpvs_list_wm = []
+icv_norm_list = []
+icv_norm_list_wm = []
+researchgroup_list = []
+subjname_list = []
+
+def pvs_stats(frangi,comp,stats):
+    # mask component first
+    os.system(f'{qit} MaskComponents \
+        --input {frangi} \
+        --output {comp}')
+    
+    # count volume and number of pvs
+    os.system(f'{qit} MaskMeasure \
+        --input {comp} \
+        --comps \
+        --counts \
+        --output {stats}')
+    
+def icv_calc(aseg):
+    # return 0
+    stat = pd.read_csv(aseg)
+    icv = stat['EstimatedTotalIntrCranialVol'][0]
+    return icv
+
+for frangi,frangi_wm,icv_file in zip(final_frangi_list,final_frangi_list_wm,icv_list):
         
-    subj_folder = '/'+'/'.join(str.split(frangi_thresholded,'/')[1:-1])
+    subj_folder = '/'+'/'.join(str.split(frangi,'/')[1:-1])
 
     # pvs count
     pvsseg_comp = os.path.join(subj_folder, 'frangi_comp.nii.gz')
-    # gt_comp = os.path.join(subj_folder, subj_name+'-groundtruth_comp.csv')
     pvsseg_stats = os.path.join(subj_folder, 'pvsseg_stats.csv')
-    #gt_stats = os.path.join(subj_folder, subj_name+'-groundtruth_stats.csv')
 
-    # mask component first
-    os.system(f'{qit} MaskComponents \
-        --input {frangi_thresholded} \
-        --output {pvsseg_comp}')
-    
+    pvsseg_comp_wm = os.path.join(subj_folder, 'frangi_comp_wm.nii.gz')
+    pvsseg_stats_wm = os.path.join(subj_folder, 'pvsseg_stats_wm.csv')
 
-    # count volume and number of pvs
-    os.system(f'{qit} MaskMeasure \
-        --input {pvsseg_comp} \
-        --comps \
-        --counts \
-        --output {pvsseg_stats}')
+    pvs_stats(frangi,pvsseg_comp,pvsseg_stats)
+
+    pvs_stats(frangi_wm,pvsseg_comp_wm,pvsseg_stats_wm)
 
     # make list
-    stat = pd.read_csv(pvsseg_stats,index_col=0)
-    numpvs =  stat.loc['component_count'][0]
-    volpvs = stat.loc['component_sum'][0]
+    stats = pd.read_csv(pvsseg_stats,index_col=0)
+    countpvs =  stats.loc['component_count'][0]    # number of PVS counted
+    volpvs = stats.loc['component_sum'][0]       # number of voxels
 
-    # # ICV calculation - what do I do with this?
-    # aseg_raw = os.path.join(subj_folder,'aseg.stats')
-    # aseg_file = os.path.join(subj_folder,'asegstats.csv')
-
-    # os.system(f'{fs_asegtable} \
-    #             -i {aseg_raw} \
-    #             -d comma \
-    #             -t {aseg_file}')
-    
-    # stat = pd.read_csv(aseg_file)
-    # icv = stat['EstimatedTotalIntrCranialVol'][0]
+    stats_wm = pd.read_csv(pvsseg_stats_wm,index_col=0)
+    countpvs_wm =  stats_wm.loc['component_count'][0]    # number of PVS counted
+    volpvs_wm = stats_wm.loc['component_sum'][0]       # number of voxels
 
 
+    # ICV calculation - what do I do with this?
+    icv = icv_calc(icv_file)
+    # calculate the normalized volume / voxels --> right now using 1 vox = 1mm^3
+    volpvs_norm = volpvs/icv
+    volpvs_norm_wm = volpvs_wm/icv
 
 
-    # if "-ad" in subj_name:
-    #     ad_vol_list.append(volpvs)
-    #     ad_count_list.append(numpvs)
-    # else:
-    #     cn_vol_list.append(volpvs)
-    #     cn_count_list.append(numpvs)
+    volpvs_list.append(volpvs)
+    countpvs_list.append(countpvs)
+    volpvs_list_wm.append(volpvs_wm)
+    countpvs_list_wm.append(countpvs_wm)
+    icv_norm_list.append(volpvs_norm)
+    icv_norm_list_wm.append(volpvs_norm_wm)
+    subjname_list.append(str.split(frangi,'/')[-2])
+    researchgroup_list.append(str.split(frangi,'/')[-3])
 
 
-    # ####------wm brain calculation------#####
-
-    # # hessian calculation
-    # hes =  os.path.join(subj_folder,subj_name+'-hessian_wm.nii.gz')
-    # os.system(f'{qit} VolumeFilterHessian \
-    #           --input {subj} \
-    #           --mask {m_wm} \
-    #           --mode Norm \
-    #           --output {hes}')
-
-    # hes_stats = os.path.join(subj_folder,subj_name+'-hessianstats_wm.csv')
-    # os.system(f'{qit} VolumeMeasure \
-    #           --input {hes} \
-    #           --output {hes_stats}')
-
-    # hes_csv = pd.read_csv(hes_stats,index_col=0)
-    # half_max = hes_csv.loc['max'][0]/2
+    print('subject '+ str.split(frangi,'/')[-2] + ' stats done!')
 
 
-    # # frangi calculation
-    # frangi_mask = os.path.join(subj_folder,subj_name+'-frangimask_wmwm.nii.gz')
-    # os.system(f'{qit} VolumeFilterFrangi \
-    #           --input {subj} \
-    #           --mask {m_wm} \
-    #           --low {0.1} \
-    #           --high {5.0} \
-    #           --scales {10} \
-    #           --gamma {half_max} \
-    #           --dark \
-    #           --output {frangi_mask}')
 
+##############----------------------------------------------write all results to csv--------------------------------------################
 
-    # ############# insert IQR scaling
+col = ['subjects','research group','pvsvol','pvscount','pvsvolwm','pvscountwm','icv norm','icv norm wm']
 
+alldata = pd.DataFrame(data=zip(subjname_list,researchgroup_list,volpvs_list,countpvs_list,volpvs_list_wm,countpvs_list_wm,icv_norm_list,icv_norm_list_wm),index=np.arange(len(subjname_list))+1,columns=col)
 
-    # # threshold calculation
-    # # for now, set threshold to optimal threshold you found with sub-101 with bias / denoise 
-    # t = 0.0025
-
-    # frangi_thresholded = os.path.join(subj_folder,subj_name+'-frangimask-thresholded_wm.nii.gz')
-    # os.system(f'{qit} VolumeThreshold \
-    #           --input {frangi_mask} \
-    #           --mask {m_wm} \
-    #           --threshold {t} \
-    #           --output {frangi_thresholded}')
-
-    # print('subject '+ subj_name + ' wm frangi done!')
-
-
-    # # pvs count
-    # pvsseg_comp = os.path.join(subj_folder, subj_name+'-frangi_comp_wm.nii.gz')
-    # # gt_comp = os.path.join(subj_folder, subj_name+'-groundtruth_comp.csv')
-    # pvsseg_stats = os.path.join(subj_folder, subj_name+'-pvsseg_stats_wm.csv')
-    # #gt_stats = os.path.join(subj_folder, subj_name+'-groundtruth_stats.csv')
-
-    # # mask component first
-    # os.system(f'{qit} MaskComponents \
-    #       --input {frangi_thresholded} \
-    #       --output {pvsseg_comp}')
-    # # os.system(f'{qit} MaskComponents \
-    # #       --input {gt} \
-    # #       --output {gt_comp}')
-    
-
-    # # count volume and number of pvs
-    # os.system(f'{qit} MaskMeasure \
-    #       --input {pvsseg_comp} \
-    #       --comps \
-    #       --counts \
-    #       --output {pvsseg_stats}')
-
-    # # make list
-    # stat = pd.read_csv(pvsseg_stats,index_col=0)
-    # numpvs =  stat.loc['component_count'][0]
-    # volpvs = stat.loc['component_sum'][0]
-
-    # if "-ad" in subj_name:
-    #     wm_ad_vol_list.append(volpvs)
-    #     wm_ad_count_list.append(numpvs)
-    # else:
-    #     wm_cn_vol_list.append(volpvs)
-    #     wm_cn_count_list.append(numpvs)
-
-
-    # ####------bg brain calculation------#####
-
-    # # hessian calculation
-    # hes =  os.path.join(subj_folder,subj_name+'-hessian-bg.nii.gz')
-    # os.system(f'{qit} VolumeFilterHessian \
-    #           --input {subj} \
-    #           --mask {m_bg} \
-    #           --mode Norm \
-    #           --output {hes}')
-
-    # hes_stats = os.path.join(subj_folder,subj_name+'-hessianstats-bg.csv')
-    # os.system(f'{qit} VolumeMeasure \
-    #           --input {hes} \
-    #           --output {hes_stats}')
-
-    # hes_csv = pd.read_csv(hes_stats,index_col=0)
-    # half_max = hes_csv.loc['max'][0]/2
-
-
-    # # frangi calculation
-    # frangi_mask = os.path.join(subj_folder,subj_name+'-frangimask-bg.nii.gz')
-    # os.system(f'{qit} VolumeFilterFrangi \
-    #           --input {subj} \
-    #           --mask {m_bg} \
-    #           --low {0.1} \
-    #           --high {5.0} \
-    #           --scales {10} \
-    #           --gamma {half_max} \
-    #           --dark \
-    #           --output {frangi_mask}')
-
-
-    # ############# insert IQR scaling
-
-
-    # # threshold calculation
-    # # for now, set threshold to optimal threshold you found with sub-101 with bias / denoise 
-    # t = 0.0025
-
-    # frangi_thresholded = os.path.join(subj_folder,subj_name+'-frangimask-thresholded.nii.gz')
-    # os.system(f'{qit} VolumeThreshold \
-    #           --input {frangi_mask} \
-    #           --mask {m_bg} \
-    #           --threshold {t} \
-    #           --output {frangi_thresholded}')
-
-    # print('subject '+ subj_name + ' bg frangi done!')
-
-
-    # # pvs count
-    # pvsseg_comp = os.path.join(subj_folder, subj_name+'-frangi_comp_bg.nii.gz')
-    # # gt_comp = os.path.join(subj_folder, subj_name+'-groundtruth_comp.csv')
-    # pvsseg_stats = os.path.join(subj_folder, subj_name+'-pvsseg_stats_bg.csv')
-    # #gt_stats = os.path.join(subj_folder, subj_name+'-groundtruth_stats.csv')
-
-    # # mask component first
-    # os.system(f'{qit} MaskComponents \
-    #       --input {frangi_thresholded} \
-    #       --output {pvsseg_comp}')
-    # # os.system(f'{qit} MaskComponents \
-    # #       --input {gt} \
-    # #       --output {gt_comp}')
-    
-
-    # # count volume and number of pvs
-    # os.system(f'{qit} MaskMeasure \
-    #       --input {pvsseg_comp} \
-    #       --comps \
-    #       --counts \
-    #       --output {pvsseg_stats}')
-
-    # # make list
-    # stat = pd.read_csv(pvsseg_stats,index_col=0)
-    # numpvs =  stat.loc['component_count'][0]
-    # volpvs = stat.loc['component_sum'][0]
-
-    # if "-ad" in subj_name:
-    #     bg_ad_vol_list.append(volpvs)
-    #     bg_ad_count_list.append(numpvs)
-    # else:
-    #     bg_cn_vol_list.append(volpvs)
-    #     bg_cn_count_list.append(numpvs)
+alldata.to_csv(os.path.join(working_dir,'frangidata.csv'), index=True)
 
 
 
@@ -514,7 +416,7 @@ for frangi_thresholded in final_frangi_list:
 # plt.legend()
 # plt.text(1,np.max(ad_vol_list)-np.min(cn_vol_list)+2,str(ham))
 # plt.show()
-# fig_vol.savefig(os.path.join(path_subj,'ADvsCN_pvsvol.jpeg'))
+# fig_vol.savefig(os.path.join(data_dir,'ADvsCN_pvsvol.jpeg'))
 
 # fig_count = plt.figure(figsize=(10,5))
 # plt.scatter(ad_cases,ad_count_list,c='red',label='AD')
@@ -525,7 +427,7 @@ for frangi_thresholded in final_frangi_list:
 # plt.text(1,np.max(ad_count_list)-np.min(cn_count_list)+2,str(bao))
 # plt.legend()
 # plt.show()
-# fig_count.savefig(os.path.join(path_subj,'ADvsCN_pvscount.jpeg'))
+# fig_count.savefig(os.path.join(data_dir,'ADvsCN_pvscount.jpeg'))
 
 # ad_cases = np.append(ad_cases,ad_casesmean)
 # cn_cases = np.append(cn_cases,cn_casesmean)
@@ -541,10 +443,10 @@ for frangi_thresholded in final_frangi_list:
 # alldata_adcount = pd.DataFrame(data=zip(ad_count_list),index=ad_cases,columns =['ad count']).rename_axis('subjects')
 # alldata_cncount = pd.DataFrame(data=zip(cn_count_list),index=cn_cases,columns =['cn count']).rename_axis('subjects')
 
-# alldata_advol.to_csv(os.path.join(path_subj,'ADvolumes.csv'), index=True)
-# alldata_cnvol.to_csv(os.path.join(path_subj,'CNvolumes.csv'), index=True)
-# alldata_adcount.to_csv(os.path.join(path_subj,'ADcounts.csv'), index=True)
-# alldata_cncount.to_csv(os.path.join(path_subj,'CNcounts.csv'), index=True)
+# alldata_advol.to_csv(os.path.join(data_dir,'ADvolumes.csv'), index=True)
+# alldata_cnvol.to_csv(os.path.join(data_dir,'CNvolumes.csv'), index=True)
+# alldata_adcount.to_csv(os.path.join(data_dir,'ADcounts.csv'), index=True)
+# alldata_cncount.to_csv(os.path.join(data_dir,'CNcounts.csv'), index=True)
 
 
 
@@ -571,7 +473,7 @@ for frangi_thresholded in final_frangi_list:
 # # plt.legend()
 # # plt.text(1,np.max(wm_ad_vol_list)-np.min(wm_cn_vol_list)+2,str(ham))
 # # plt.show()
-# # wm_fig_vol.savefig(os.path.join(path_subj,'ADvsCN_pvsvol_wm.jpeg'))
+# # wm_fig_vol.savefig(os.path.join(data_dir,'ADvsCN_pvsvol_wm.jpeg'))
 
 # # wm_fig_count = plt.figure(figsize=(10,5))
 # # plt.scatter(ad_cases,wm_ad_count_list,c='red',label='AD')
@@ -582,7 +484,7 @@ for frangi_thresholded in final_frangi_list:
 # # plt.text(1,np.max(wm_ad_count_list)-np.min(wm_cn_count_list)+2,str(bao))
 # # plt.legend()
 # # plt.show()
-# # wm_fig_count.savefig(os.path.join(path_subj,'ADvsCN_pvscount_wm.jpeg'))
+# # wm_fig_count.savefig(os.path.join(data_dir,'ADvsCN_pvscount_wm.jpeg'))
 
 # # ad_cases = np.append(ad_cases,ad_casesmean)
 # # cn_cases = np.append(cn_cases,cn_casesmean)
@@ -598,10 +500,10 @@ for frangi_thresholded in final_frangi_list:
 # # alldata_adcount = pd.DataFrame(data=zip(ad_count_list),index=ad_cases,columns =['ad count,bg']).rename_axis('subjects')
 # # alldata_cncount = pd.DataFrame(data=zip(cn_count_list),index=cn_cases,columns =['cn count,bg']).rename_axis('subjects')
 
-# # alldata_advol.to_csv(os.path.join(path_subj,'ADvolumes_wm.csv'), index=True)
-# # alldata_cnvol.to_csv(os.path.join(path_subj,'CNvolumes_wm.csv'), index=True)
-# # alldata_adcount.to_csv(os.path.join(path_subj,'ADcounts_wm.csv'), index=True)
-# # alldata_cncount.to_csv(os.path.join(path_subj,'CNcounts_wm.csv'), index=True)
+# # alldata_advol.to_csv(os.path.join(data_dir,'ADvolumes_wm.csv'), index=True)
+# # alldata_cnvol.to_csv(os.path.join(data_dir,'CNvolumes_wm.csv'), index=True)
+# # alldata_adcount.to_csv(os.path.join(data_dir,'ADcounts_wm.csv'), index=True)
+# # alldata_cncount.to_csv(os.path.join(data_dir,'CNcounts_wm.csv'), index=True)
 
 
 
@@ -631,7 +533,7 @@ for frangi_thresholded in final_frangi_list:
 # # plt.legend()
 # # plt.text(1,np.max(bg_ad_vol_list)-np.min(bg_cn_vol_list)+2,str(ham))
 # # plt.show()
-# # bg_fig_vol.savefig(os.path.join(path_subj,'ADvsCN_pvsvol_bg.jpeg'))
+# # bg_fig_vol.savefig(os.path.join(data_dir,'ADvsCN_pvsvol_bg.jpeg'))
 
 # # bg_fig_count = plt.figure(figsize=(10,5))
 # # plt.scatter(ad_cases,bg_ad_count_list,c='red',label='AD')
@@ -642,7 +544,7 @@ for frangi_thresholded in final_frangi_list:
 # # plt.text(1,np.max(bg_ad_count_list)-np.min(bg_cn_count_list)+2,str(bao))
 # # plt.legend()
 # # plt.show()
-# # bg_fig_count.savefig(os.path.join(path_subj,'ADvsCN_pvscount_bg.jpeg'))
+# # bg_fig_count.savefig(os.path.join(data_dir,'ADvsCN_pvscount_bg.jpeg'))
 
 # # ad_cases = np.append(ad_cases,ad_casesmean)
 # # cn_cases = np.append(cn_cases,cn_casesmean)
@@ -658,8 +560,8 @@ for frangi_thresholded in final_frangi_list:
 # # alldata_adcount = pd.DataFrame(data=zip(ad_count_list),index=ad_cases,columns =['ad count,bg']).rename_axis('subjects')
 # # alldata_cncount = pd.DataFrame(data=zip(cn_count_list),index=cn_cases,columns =['cn count,bg']).rename_axis('subjects')
 
-# # alldata_advol.to_csv(os.path.join(path_subj,'ADvolumes_bg.csv'), index=True)
-# # alldata_cnvol.to_csv(os.path.join(path_subj,'CNvolumes_bg.csv'), index=True)
-# # alldata_adcount.to_csv(os.path.join(path_subj,'ADcounts_bg.csv'), index=True)
-# # alldata_cncount.to_csv(os.path.join(path_subj,'CNcounts_bg.csv'), index=True)
+# # alldata_advol.to_csv(os.path.join(data_dir,'ADvolumes_bg.csv'), index=True)
+# # alldata_cnvol.to_csv(os.path.join(data_dir,'CNvolumes_bg.csv'), index=True)
+# # alldata_adcount.to_csv(os.path.join(data_dir,'ADcounts_bg.csv'), index=True)
+# # alldata_cncount.to_csv(os.path.join(data_dir,'CNcounts_bg.csv'), index=True)
 
