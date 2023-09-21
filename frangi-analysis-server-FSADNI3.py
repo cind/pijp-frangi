@@ -13,7 +13,7 @@ from scipy import stats
 
 #for server
 #qit command
-qit = '/opt/qit/bin/qit'
+qit = '/opt/qit/qit-build-linux-latest/bin/qit'
 
 #ANTs commands
 os.environ['ANTSVERSION'] = 'ants-2017-12-07'
@@ -91,13 +91,13 @@ fs_asegtable = '/opt/freesurfer/bin/asegstats2table'
 # #for server:
 data_dir = '/m/InProcess/External/ADNI_FSdn/Freesurfer/subjects/'
 working_dir = '/m/InProcess/External/ADNI3/ADNI3_frangi/pijp-frangi'
-researcher_dir = '/m/Researchers/SerenaT/ADNI3_files'
+researcher_dir = '/m/Researchers/SerenaT/'
 
 os.makedirs(working_dir,exist_ok=True)
 os.makedirs(researcher_dir,exist_ok=True)
 #data_dir = '/m/Researchers/SerenaT/ADNI3_samples'
 
-ref_csv = os.path.join(researcher_dir,'ADNI3_T1_namefilter.csv')
+ref_csv = os.path.join(researcher_dir,'ADNI3_AD-MCI-CN-LONIsearch.csv')
 ref_list = pd.read_csv(ref_csv)
 folders = os.listdir(data_dir)
 subjects = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir,d)) & d.startswith('ADNI')]
@@ -181,7 +181,7 @@ for subj in subjects:
                 aseg_convert(icv,icv_convert)
                 icv_list.append(icv_convert)
 
-                
+
 
 
 ##############------------------------------------make mask list------------------------################
