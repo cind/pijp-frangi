@@ -14,7 +14,7 @@ from scipy import stats
 #for server
 #qit command
 os.environ['JAVA_HOME']='/opt/qit/jdk-12.0.2'
-os.environ['PATH'] = '$JAVA_HOME/bin:$PATH'
+os.environ['PATH'] = os.environ['JAVA_HOME'] + '/bin:' + os.environ['PATH']
 qit = '/opt/qit/bin/qit'
 
 #ANTs commands
