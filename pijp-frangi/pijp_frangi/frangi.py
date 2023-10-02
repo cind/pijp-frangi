@@ -17,6 +17,7 @@ from scipy import stats
 # Before loading NUMPY: HACK to avoid seg fault on some hosts.
 #os.environ["OMP_NUM_THREADS"] = "1"
 
+import repo
 from pijp import util, coding
 from pijp.repositories import ProcessingLog
 from pijp.core import Step, get_project_dir
@@ -30,42 +31,44 @@ PROCESS_TITLE = 'pijp-frangi'
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
 
-def get_case_dir(project, code):
-    cdir = os.path.join(get_process_dir(project), code)
-    if not os.path.isdir(cdir):
+def get_case_dir(project, researchgroup, code):
+    cdir = os.path.join(get_process_dir(project), researchgroup, code)
+    if not os.path.exists(cdir):
         os.makedirs(cdir)
 
     return cdir
 
 
 class BaseStep(Step):
-    def __init__(self, project, data, code, args):
-        super().__init__(data, project, code, args)
+    def __init__(self, project, code, args):
+        super().__init__(project, code, args)
         # Put all of your name space variables here, e.g. image file names.
-        self.data = 'ADNI3_FSdn/Freesurfer/subjects'    # this will be changed when i run this on Raw: ADNI3_FSdn/Raw
-        self.project = 'ADNI3_frangi'
-
-        self.AD = get_case_dir(self.project,'AD')   # so this will be: ADNI3_frangi/pijp_frangi/AD
-        self.CN = get_case_dir(self.project,'CN')
-        self.MCI = get_case_dir(self.project,'MCI')
-
-        
-
+        self.data = os.path.join(get_project_dir('ADNI3_FSdn'),'Freesurfer','subjects')   # this will be changed when i run this on Raw: ADNI3_FSdn/Raw
+        self.project = project
         self.code = code
-        
-        
-        self.working_dir = get_case_dir(self.project, self.code)
+
+        # other folders:
+        researchgroup = repo.Repository(self.project).get_researchgroup(self.code)
+        self.working_dir = get_case_dir(self.project, researchgroup, self.code)
+
+        # only for freesurfer
+        self.mrifolder = os.path.join(self.data,self.code,'mri')
+        self.statsfolder = os.path.join(self.data,self.code,'stats')
 
         # all nii converted
         self.t1 = os.path.join(self.working_dir, self.code + "-T1.nii.gz")
         self.wmdgmask = os.path.join(self.working_dir, self.code + "-wmdgmask.nii.gz")
-        self.wmparcmask = os.path.join(self.working_dir, self.code + "-wmdgmask.nii.gz")
+        self.wmparcmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
+        self.frangimask = os.path.join(self.working_dir, self.code + "-frangi-thresholded.nii.gz")
+        self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
 	
         # If you need to get time point, site id, subject number, or other meta data
         # that is stored in the series code, use this object.
         self.Code = coding.Code(self.code)
         # You may want a scan code to lookup other image types from the same visit.
         self.scan_code = self.Code.scan_code
+
+
 
     def _run_cmd(self, cmd, script_name=None):
         if script_name is None:
@@ -133,31 +136,32 @@ class BaseStep(Step):
         return output
 
 
-class commands(BaseStep):
+class Commands(BaseStep):
     # example:
-    # fs(input,output,func) --> at the moment, I have it so this already includes running the command 
+    # commands.fs(func) where func = f'some command -i {input} -o {output}, then input and output are specified at the actual functions --> at the moment, I have it so this already includes running the command 
 
     exportfs = '6.0.0'
     exportants = 'ants-2017-12-07'
     exportfsl = '6.0.0'
     exportmatlab = 'R2019a'
+    #qitpath = 'qit'
 
-    def qit(self,input,output,func):
-        cmd = f'' 
+    def qit(self,func):
+        cmd = f'qit {func}' 
         _run_cmd(self,cmd,script_name=func)
 
         
-    def fs(self,input,output,func):
-        cmd = f'export FSVERSION={self.exportfs} && {func} {input} {output}'
+    def fs(self,func):
+        cmd = f'export FSVERSION={self.exportfs} && {func}'
         _run_cmd(self,cmd,script_name=func)
     
-    def ants(self,input,output,func):
-        cmd = f'export ANTSVERSION= {self.exportants} && {func} {input} {output}'
+    def ants(self,func):
+        cmd = f'export ANTSVERSION= {self.exportants} && {func}'
         _run_cmd(self,cmd,script_name=func)
 
     
-    def fsl(self,input,output,func):
-        cmd = f'export FSLVERSION= {self.exportfsl} && {func} {input} {output}'
+    def fsl(self,func):
+        cmd = f'export FSLVERSION= {self.exportfsl} && {func}'
         _run_cmd(self,cmd,script_name=func)
 
     
@@ -176,7 +180,7 @@ class commands(BaseStep):
     
     
 
-class Stage(BaseStep):
+class Stage(BaseStep,Commands):
     process_name = PROCESS_TITLE
     step_name = 'stage'
     step_cli = 'stage'
@@ -184,11 +188,10 @@ class Stage(BaseStep):
     mem = '1G'
 
 
-
-
     def __init__(self, project, code, args):
         super().__init__(project, code, args)
         self.next_step = None
+        #self.asegstat = 
         
 
     # def import(self):
@@ -199,12 +202,15 @@ class Stage(BaseStep):
 
     # def run(self):
 	#     self.import()
-    
+    def aseg_convert(self,aseg_raw): 
+        cmd = f'asegstats2table -i {aseg_raw} -d comma -t {self.asegstats}'
+        commands.fs(cmd)
     
     def mgz_convert(self,mgz,nii):
-        commands.fs(mgz,nii,'mri_convert')
+        cmd = f'mri_convert {mgz} {nii}'
+        commands.fs(cmd)
     
-    def make_mask(self,maskmgz,subj_folder):
+    def make_mask(self,maskmgz):
         img = nib.load(maskmgz)
         data = img.get_fdata()
         mask = np.zeros(np.shape(data))
@@ -217,18 +223,10 @@ class Stage(BaseStep):
             mask[data == m] = m
 
         maskimg = nib.Nifti1Image(mask,img.affine)
-        nib.save(maskimg,os.path.join(subj_folder,'wmdg-mask.nii.gz'))
-        masknii = os.path.join(subj_folder,'wmdg-mask.nii.gz')
+        nib.save(maskimg,self.wmdgmask)
 
-        return masknii
+        #return masknii     # i dont think i need this since the variable already exists and i'm just creating it here?
     
-    
-
-
-
-    # all of your methods:
-
-
 
     def _parse_args(self, args):
         """
@@ -284,70 +282,58 @@ class Analyze(Stage):
     def __init__(self, project, code, args):
         super().__init__(project, code, args)
         self.next_step = None
+        
+        # variables specific to this class
+        self.count = 0
+        self.volume = 0
+        self.icv = 0
+        self.icv_normed = 0
+        self.pvsstats = os.path.join(self.working_dir, self.code+'-pvsstats.csv')
 
-    def frangi_analysis(t1,mask,frangi_thresholded,subj_folder):
+
+    def frangi_analysis(self,t1,mask,threshold):
         # hessian calculation
-        hes =  os.path.join(subj_folder,'hessian.nii.gz')
-        os.system(f'{qit} VolumeFilterHessian \
-                --input {t1} \
-                --mask {mask} \
-                --mode Norm \
-                --output {hes}')
+        hes =  os.path.join(self.working_dir,self.code+'-hessian.nii.gz')
+        cmd_hes = f'VolumeFilterHessian --input {t1} --mask {mask} --mode Norm --output {hes}'
+        commands.qit(cmd_hes)
 
-        hes_stats = os.path.join(subj_folder,'hessianstats.csv')
-        os.system(f'{qit} VolumeMeasure \
-                --input {hes} \
-                --output {hes_stats}')
+        hes_stats = os.path.join(self.working_dir,self.code+'hessianstats.csv')
+        cmd_hesstats = f'VolumeMeasure --input {hes} --output {hes_stats}'
+        commands.qit(cmd_hesstats)
 
         hes_csv = pd.read_csv(hes_stats,index_col=0)
         half_max = hes_csv.loc['max'][0]/2
 
-
         # frangi calculation
-        frangi_mask = os.path.join(subj_folder,'frangimask.nii.gz')
-        os.system(f'{qit} VolumeFilterFrangi \
-                --input {t1} \
-                --mask {mask} \
-                --low {0.1} \
-                --high {5.0} \
-                --scales {10} \
-                --gamma {half_max} \
-                --dark \
-                --output {frangi_mask}')
-
+        frangi_mask = os.path.join(self.working_dir,self.code+'frangimask.nii.gz')
+        cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
+        commands.qit(cmd_frangi)
+        
         # threshold calculation
-        t = 0.0025
-
-        os.system(f'{qit} VolumeThreshold \
-                --input {frangi_mask} \
-                --mask {mask} \
-                --threshold {t} \
-                --output {frangi_thresholded}')
+        cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {self.frangimask}'
+        commands.qit(cmd_threshold)
     
-    def icv_calc(aseg_raw,subj_folder):
-        aseg_file = os.path.join(subj_folder,'asegstats.csv')
 
-        os.system(f'{fs_asegtable} \
-                    -i {aseg_raw} \
-                    -d comma \
-                    -t {aseg_file}')
-        
+    def icv_calc(self,aseg_file):
         stat = pd.read_csv(aseg_file)
-        icv = stat['EstimatedTotalIntrCranialVol'][0]
-        return icv
+        self.icv = stat['EstimatedTotalIntrCranialVol'][0]
     
-    def pvs_stats(frangi,comp,stats):
-        # mask component first
-        os.system(f'{qit} MaskComponents \
-            --input {frangi} \
-            --output {comp}')
-        
-        # count volume and number of pvs
-        os.system(f'{qit} MaskMeasure \
-            --input {comp} \
-            --comps \
-            --counts \
-            --output {stats}')
+    def pvs_stats(self,frangithreshold):
+        """ Calculates pvs stats. Fills in variables count and vol, returns stats table as calculated by MaskMeasure. """
+        comp = os.path.join(self.working_dir,self.code+'-frangi_comp.nii.gz')
+        cmd_comp = f'Mask Components --input {frangithreshold} --output {comp}'
+        commands.qit(cmd_comp)
+
+        cmd_maskmeas = f'MaskMeasure --input {comp} --comps --counts --output {self.pvsstats}'
+        commands.qit(cmd_maskmeas)
+
+        stats = pd.read_csv(self.pvsstats,index_col=0)
+        self.count =  stats.loc['component_count'][0]    # number of PVS counted
+        self.vol = stats.loc['component_sum'][0]       # number of voxels
+
+        self.icv_normed = self.vol / self.icv
+
+        return stats
 
 
 def run():
@@ -358,3 +344,12 @@ def run():
 
 if __name__ == "__main__":
     run_file(os.path.abspath(__file__))
+
+
+
+col = ['subjects','research group','pvsvol','pvscount','pvsvolwm','pvscountwm','icv norm','icv norm wm']
+
+alldata = pd.DataFrame(data=zip(subjname_list,researchgroup_list,volpvs_list,countpvs_list,volpvs_list_wm,countpvs_list_wm,icv_norm_list,icv_norm_list_wm),index=np.arange(len(subjname_list))+1,columns=col)
+
+alldata.to_csv(os.path.join(working_dir,'frangidata.csv'), index=True)
+

@@ -20,11 +20,11 @@ class Repository(object):
         self.project = project
         self.db = database.Database("iss")
 
-    def example(self):
+    def get_researchgroup(self,code):
         """
-        Contrived example.
+        Gets the research group (AD, MCI, CN) of a subject (helps place the subject into the right research group folder)
         """
-        sql = f"SELECT * FROM ImageList.{self.project}"
+        sql = f"SELECT ResearchGroup FROM ImageList.{self.project} where Code = '{code}'"
         cursor = self.db.execute(sql)
         return _trans_to_dict(cursor)
     
