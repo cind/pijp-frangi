@@ -38,19 +38,19 @@ for code in subjects:
 
     basics = frangi.BaseStep(project, code)
     prep = frangi.Stage(project, code)
-    analyze = frangi.Analyze()
+    analyze = frangi.Analyze(project, code)
 
     t1mgz = os.path.join(basics.mrifolder,'T1.mgz')
     maskmgz = os.path.join(basics.mrifolder,'aparc+aseg.mgz')
     asegstats = os.path.join(basics.statsfolder,'aseg.stats')
 
-    #prep.mgz_convert(t1mgz,idk??)
+    prep.mgz_convert(t1mgz)
     prep.aseg_convert(asegstats)
     prep.make_mask(maskmgz)
 
-    analyze.frangi_analysis(t1nii, basics.wmdgmask, 0.0025)
-    analyze.icv_calc(basics.asegstats)
-    analyze.pvs_stats(basics.frangimask)
+    analyze.frangi_analysis(basics.t1, basics.wmdgmask, 0.0025)
+    analyze.icv_calc()
+    analyze.pvs_stats()
 
     subject_codes.append(code)
     researchgroup.append(basics.researchgroup)
@@ -63,7 +63,5 @@ basics = frangi.BaseStep(project, code)
 
 
 col = ['subjects','research group','pvsvol','pvscount','icv norm']
-
 alldata = pd.DataFrame(data=zip(subject_codes,researchgroup,pvsvol,pvscount,icvnorm_vol),index=np.arange(len(subject_codes))+1,columns=col)
-
 alldata.to_csv(os.path.join(get_project_dir(basics.project),'frangidata.csv'), index=True)

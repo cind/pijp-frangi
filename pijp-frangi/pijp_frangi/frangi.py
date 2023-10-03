@@ -48,7 +48,7 @@ class BaseStep(Step):
         self.code = code
 
         # other folders:
-        researchgroup = repo.Repository(self.project).get_researchgroup(self.code)
+        researchgroup = repo.Repository(self.project).get_researchgroup(self.code)[0]['Research Group']
         self.working_dir = get_case_dir(self.project, researchgroup, self.code)
 
         # only for freesurfer
@@ -316,8 +316,8 @@ class Analyze(Stage):
         super().qit(cmd_threshold)
     
 
-    def icv_calc(self,aseg_file):
-        stat = pd.read_csv(aseg_file)
+    def icv_calc(self):
+        stat = pd.read_csv(self.asegstats)
         self.icv = stat['EstimatedTotalIntrCranialVol'][0]
     
     def pvs_stats(self):
