@@ -53,22 +53,47 @@ for code in subjects:
         maskmgz = os.path.join(basics.mrifolder,'aparc+aseg.mgz')
         asegstats = os.path.join(basics.statsfolder,'aseg.stats')
 
+     
         # converting mgz and making masks
         basics.mgz_convert(t1mgz,basics.t1)
         basics.mgz_convert(wmparcmgz,basics.wmmask)
         basics.aseg_convert(asegstats)
         basics.make_mask(maskmgz)
 
+
+        # get the flair file, biasfield correct and register it
+        # flairraw = os.path.join(xxx)
+        # # do i want to save the biasfield corrected version? for now don't
+        # basics.biasfield_corr(flairraw,self.flair)
+        # basics.register_flair(self.flair,basics.t1,self.flair)
+        
+        # create the wmh mask
+        # basics.wmh_mask(self.t1,self.flair)
+
         analyze.icv_calc(basics.asegstats)
 
-        analyze.frangi_analysis(basics.t1, basics.allmask, 0.0025, basics.frangimask_all)
-        analyze.pvs_stats(basics.frangimask_all)
+        
+        frangimask_all = os.path.join(basics.working_dir, basics.code + "-frangi-thresholded.nii.gz")
+        analyze.frangi_analysis(basics.t1, basics.allmask, 0.0025, frangimask_all)
+
+        # # remove wmh
+        # frangimask_all_wmhremoved = os.path.join(basics.working_dir, basics.code + "-frangi-thresholded-wmhremoved.nii.gz")
+        # analyze.wmh_removal(basics.wmhmask,frangimask_all,frangimask_all_wmhremoved)
+
+
+        analyze.pvs_stats(frangimask_all_wmhremoved)
         pvscount.append(analyze.count)
         pvsvol.append(analyze.vol)
         icvnorm_vol.append(analyze.icv_normed)
 
-        analyze.frangi_analysis(basics.t1, basics.wmmask, 0.0002, basics.frangimask_wm,region='wm')
-        analyze.pvs_stats(basics.frangimask_wm)
+        frangimask_wm = os.path.join(basics.working_dir, basics.code + "-frangi-thresholded-wm.nii.gz")
+        analyze.frangi_analysis(basics.t1, basics.wmmask, 0.0002, frangimask_wm,region='wm')
+
+        # # remove wmh
+        # frangimask_wm_wmhremoved = os.path.join(basics.working_dir, basics.code + "-frangi-thresholded-wm-wmhremoved.nii.gz")
+        # analyze.wmh_removal(basics.wmhmask,frangimask_wm,frangimask_wm_wmhremoved)
+
+        analyze.pvs_stats(frangimask_wm_wmhremoved)
         pvscountwm.append(analyze.count)
         pvsvolwm.append(analyze.vol)
         icvnorm_volwm.append(analyze.icv_normed)

@@ -9,6 +9,6 @@ from scipy import stats
 
 
 
-# import csv
+# import pvs info csv
 # create new pd with only AD, MCI, CN
-# recreate bar plot for regions
+# recreate bar plot for regions by taking overlapping regions with 
