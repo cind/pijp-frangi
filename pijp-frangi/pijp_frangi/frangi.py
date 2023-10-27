@@ -256,7 +256,7 @@ class Stage(Commands):
             with open(unzipped_flair, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-        wmh_cmd = f"\"addpath('/opt/something/Matlabtoolbox/spm12');spm_jobman('initcfg');ps_LST_lpa({unzipped_flair});Exit\""
+        wmh_cmd = f"\"addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');spm_jobman('initcfg');ps_LST_lpa({unzipped_flair});Exit\""
         matlab_cmd = f'-nodesktop -noFigureWindows -nosplash -r {wmh_cmd}'
         self.matlab(matlab_cmd)
         wmhmask = os.path.join(wmhlesion_folder,'ples_lpa_mr'+self.code+'FLAIR.nii')
