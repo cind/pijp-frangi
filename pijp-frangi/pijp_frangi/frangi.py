@@ -48,9 +48,7 @@ class BaseStep(Step):
         self.data = os.path.join(get_project_dir('ADNI3_FSdn'),'Freesurfer','subjects')   # this will be changed when i run this on Raw: ADNI3_FSdn/Raw
         self.project = project
         self.code = code
-        
         self.researchgroup = repo.Repository(self.project).get_researchgroup(self.code)[0]['ResearchGroup']
-        
         self.working_dir = get_case_dir(self.project, self.researchgroup, self.code)
 
         # only for freesurfer
@@ -66,6 +64,7 @@ class BaseStep(Step):
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
         self.wmhmask = os.path.join(self.working_dir, self.code + "-wmhmask.nii.gz")   ## may need to fix this depending on where the mask lands
+        
         
 	
         # If you need to get time point, site id, subject number, or other meta data
@@ -175,23 +174,11 @@ class Commands(BaseStep):
         self._run_cmd(cmd,script_name='fsl_func')
         # script_name='fslfunc'
     
-    ## i have no idea how this works
+    # this may not work
     def matlab(self,func):
-        cmd = f'export MATLAB_VERSION={self.exportmatlab} && {func}'
-        self._run_cmd(cmd,script_name='fsl_func')
+        cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab {func}'
+        self._run_cmd(cmd,script_name='matlab_func')
 
-    
-    #def matlab(input,output,func):
-        # # #LST commands, addpath
-        # # os.environ['MATLAB_VERSION']='R2019a' 
-        # # matlab = '/opt/mathworks/bin/matlab'
-        # # addpath = "\"addpath('/m/Researchers/SerenaT/spm12');exit\""
-        # # os.system(f'{matlab} \
-        # #             -nodesktop \
-        # #             -noFigureWindows \
-        # #             -nosplash \
-        # #             -r \
-        # #             {addpath}')
  
 
 class Stage(Commands):
@@ -225,7 +212,7 @@ class Stage(Commands):
         cmd = f'mri_convert {mgz} {nii}'
         self.fs(cmd)
     
-    def make_mask(self,maskmgz):
+    def make_allmask(self,maskmgz):
         img = nib.load(maskmgz)
         data = img.get_fdata()
         mask = np.zeros(np.shape(data))
@@ -240,34 +227,41 @@ class Stage(Commands):
         maskimg = nib.Nifti1Image(mask,img.affine)
         nib.save(maskimg,self.wmdgmask)
 
-        #return masknii     # i dont think i need this since the variable already exists and i'm just creating it here?
     
     ################# for WMH removal ###############
-    def biasfield_corr(self,image,output):
-        cmd = f'N4BiasFieldCorrection -i {image} -o {output}'
-        self.ants(cmd)
+    def make_wmhmask(self,t1,input_flair):
+        
+        # make a wmh folder for all wmhmask processing
+        wmhlesion_folder = os.path.join(self.working_dir,'wmhlesion')
+        os.makedirs(os.path.join(self.working_dir,'wmhlesion'),exist_ok=True)
+        rename_flair = os.rename(input_flair,os.path.join(self.working_dir,self.code+"FLAIR.nii.gz"))
+        shutil.copy(rename_flair,wmhlesion_folder)
+        flair = os.path.join(wmhlesion_folder,self.code+"FLAIR.nii.gz")
 
+        # bias correct flair
+        flair_bc = os.path.join(wmhlesion_folder,self.code+"FLAIRbc.nii.gz")
+        biascorrect = f'N4BiasFieldCorrection -i {flair} -o {flair_bc}'
+        self.ants(biascorrect)
 
-    def register_flair(self,flairdicom,ref,flair):
-        cmd = f'flirt -in {flairdicom} -ref {ref} -out {flair}'
-        self.fsl(cmd)
+        #register flair
+        flair_reg = os.path.join(wmhlesion_folder,self.code+"FLAIRbcreg.nii.gz")
+        register = f'flirt -in {flair_bc} -ref {t1} -out {flair_reg}'
+        self.fsl(register)
 
-    ### this needs to be fixed
-    # def wmh_mask(self,t1,flair):
-    #     # first unzip the files
-        # unzipped_flair = os.path.join(self.working_dir,self.code+'FLAIR.nii)
-        # unzipped_t1 = os.path.join(self.working_dir,self.code+'T1.nii)
-        # with gzip.open(flair, 'rb') as f_in:
-        #     with open(unzipped_flair, 'wb') as f_out:
-        #         shutil.copyfileobj(f_in, f_out)
-        # with gzip.open(t1, 'rb') as f_in:
-        #     with open(unzipped_t1, 'wb') as f_out:
-        #         shutil.copyfileobj(f_in, f_out)
-    #     matlab_cmd = f"\"addpath('/Users/nanatang/Documents/GradResearch/spm12');spm_jobman('initcfg'); \ ps_LST_lpa({unzipped_flair},{unzipped_t1},'yes'); \ Exit\""
-    #     system_cmd = os.system(f'{matlab} \ -nodesktop \ -noFigureWindows \ -nosplash \ -r \ {wmh_remove}')
-    #     self.matlab(system_cmd)
-    #     self.wmhmask = wherever that file is >> 'ples_lpa_mr'+[name of flair file that was inputted].nii'
-    # should i be using LPA or LGA
+        ###### this needs to be fixed
+        ## currently using LPA
+        # first unzip the files
+        unzipped_flair = os.path.join(wmhlesion_folder,self.code+'FLAIR.nii')
+        with gzip.open(input_flair, 'rb') as f_in:
+            with open(unzipped_flair, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+
+        wmh_cmd = f"\"addpath('/opt/something/Matlabtoolbox/spm12');spm_jobman('initcfg');ps_LST_lpa({unzipped_flair});Exit\""
+        matlab_cmd = f'-nodesktop -noFigureWindows -nosplash -r {wmh_cmd}'
+        self.matlab(matlab_cmd)
+        wmhmask = os.path.join(wmhlesion_folder,'ples_lpa_mr'+self.code+'FLAIR.nii')
+        shutil.copy(wmhmask, self.working_dir)
+        self.wmhmask = os.path.join(self.working_dir,'ples_lpa_mr'+self.code+'FLAIR.nii')
         
 
     ################# for WMH removal ###############
@@ -335,8 +329,9 @@ class Analyze(Stage):
         self.pvsstats = os.path.join(self.working_dir, self.code+'-pvsstats.csv')
         self.comp = os.path.join(self.working_dir,self.code+'-frangi_comp.nii.gz')
 
+# need to fix wmh conditional
+    def frangi_analysis(self,t1,mask,threshold,output,region='all',wmhmask=None):
 
-    def frangi_analysis(self,t1,mask,threshold,output,region='all'):
         # hessian calculation
         hes =  os.path.join(self.working_dir,self.code+'-hessian-'+region+'.nii.gz')
         cmd_hes = f'VolumeFilterHessian --input {t1} --mask {mask} --mode Norm --output {hes}'
@@ -354,20 +349,24 @@ class Analyze(Stage):
         cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
         self.qit(cmd_frangi)
         
-        # threshold calculation
-        cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
-        self.qit(cmd_threshold)
-    
-    ################# for WMH removal ###############
+        
+        ################# for WMH removal ###############
 
-    def wmh_removal(self,wmh,frangimask,wmhremoved):
-        cmd = f'MaskSet --input {frangimask} --mask {wmh} --label {0} --output {wmhremoved}'
-        self.qit(cmd)
-    
-    ################# for WMH removal ###############
+        if wmhmask is not None:
+            pre_output = os.path.join(self.working_dir,self.code+'-frangimask'+region+'-thresholded.nii.gz')
+            cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {pre_output}'
+            self.qit(cmd_threshold)
+
+            cmd_removewmh = f'MaskSet --input {pre_output} --mask {wmhmask} --label {0} --output {output}'
+            self.qit(cmd_removewmh)
+        
+        else:
+            cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
+            self.qit(cmd_threshold)
 
     
-    
+        ################# for WMH removal ###############     
+     
     def icv_calc(self,asegstats):
         stat = pd.read_csv(asegstats)
         self.icv = stat['EstimatedTotalIntraCranialVol'][0]
