@@ -55,7 +55,7 @@ for code in subjects:
 
 
         # get the flair file, make wmh mask
-        flairraw = os.path.join(basics.project,'Raw',)
+        flairraw = os.path.join(basics.project,'Raw',code[0:11],code+'.FLAIR.nii.gz')
         basics.make_wmhmask(basics.t1,flairraw)
 
 
