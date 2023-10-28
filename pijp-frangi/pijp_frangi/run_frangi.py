@@ -8,6 +8,7 @@ import nibabel as nib
 from matplotlib import pyplot as plt
 from scipy import stats
 import logging
+import glob
 
 import frangi
 import repo
@@ -18,7 +19,7 @@ from pijp.core import Step, get_project_dir
 
 project = 'ADNI3_frangi'
 data_dir = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects/'
-subjects = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir,d)) & d.startswith('ADNI')][0:100]
+subjects = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir,d)) & d.startswith('ADNI')][0:2]
 print(subjects)
 
 subject_codes = []
@@ -34,9 +35,10 @@ icvnorm_volwm = []
 
 for code in subjects:
     
+    flairtest = glob.glob('/m/InProcess/External/ADNI3/ADNI3_frangi/Raw/'+code[0:19]+'*.FLAIR.nii.gz')
     rg = repo.Repository(project).get_researchgroup(code)
     #basics = frangi.BaseStep(project, code)
-    if len(rg) > 0:
+    if len(rg) > 0 & (len(flairtest) > 0):
         basics = frangi.Stage(project, code)
         analyze = frangi.Analyze(project, code)
 
@@ -55,7 +57,8 @@ for code in subjects:
 
 
         # get the flair file, make wmh mask
-        flairraw = os.path.join(basics.project,'Raw',code[0:11],code+'.FLAIR.nii.gz')
+        flairraw = glob.glob(get_project_dir(basics.project)+'/Raw/'+code[0:19],'/*.FLAIR.nii.gz')[0]
+        #flairraw = os.path.join(basics.project,'Raw',code[0:11],code+'.FLAIR.nii.gz')
         basics.make_wmhmask(basics.t1,flairraw)
 
 

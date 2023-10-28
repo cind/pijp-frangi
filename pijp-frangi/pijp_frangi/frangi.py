@@ -14,6 +14,7 @@ import gzip
 import nibabel as nib
 from matplotlib import pyplot as plt
 from scipy import stats
+import glob
 
 # Before loading NUMPY: HACK to avoid seg fault on some hosts.
 #os.environ["OMP_NUM_THREADS"] = "1"
@@ -225,7 +226,7 @@ class Stage(Commands):
             mask[data == m] = m
 
         maskimg = nib.Nifti1Image(mask,img.affine)
-        nib.save(maskimg,self.wmdgmask)
+        nib.save(maskimg,self.allmask)
 
     
     ################# for WMH removal ###############
@@ -234,9 +235,9 @@ class Stage(Commands):
         # make a wmh folder for all wmhmask processing
         wmhlesion_folder = os.path.join(self.working_dir,'wmhlesion')
         os.makedirs(os.path.join(self.working_dir,'wmhlesion'),exist_ok=True)
-        rename_flair = os.rename(input_flair,os.path.join(self.working_dir,self.code+"FLAIR.nii.gz"))
-        shutil.copy(rename_flair,wmhlesion_folder)
-        flair = os.path.join(wmhlesion_folder,self.code+"FLAIR.nii.gz")
+        shutil.copy(input_flair,wmhlesion_folder)
+        flair = glob.glob(wmhlesion_folder+"/*FLAIR.nii.gz")
+        #rename_flair = os.rename(input_flair,os.path.join(self.working_dir,self.code+"FLAIR.nii.gz"))
 
         # bias correct flair
         flair_bc = os.path.join(wmhlesion_folder,self.code+"FLAIRbc.nii.gz")
