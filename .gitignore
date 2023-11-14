@@ -1,0 +1,8 @@
+.AppleDouble*
+.DS_Store
+*.csv
+__pycache__
+venv
+*.txt
+pijp_frangi.egg-info
+
