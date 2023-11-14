@@ -3,6 +3,5 @@
 *.csv
 __pycache__
 venv
-*.txt
 pijp_frangi.egg-info
 
