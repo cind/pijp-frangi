@@ -28,3 +28,17 @@ class Repository(object):
         cursor = self.db.execute(sql)
         return _trans_to_dict(cursor)
     
+    def get_imagetype(self,code,image_type):
+        """
+        Gets the specified image for a subject (T1 or FLAIR)
+        """
+        sql = f"""
+            SELECT Code 
+            FROM ImageList.{self.project} 
+            WHERE ScanCode = '{code}'
+                AND ImageType = '{image_type}'
+            """
+        cursor = self.db.execute(sql)
+        return _trans_to_dict(cursor)
+
+    

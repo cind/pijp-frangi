@@ -196,44 +196,49 @@ class Stage(Commands):
     def __init__(self, project, code, args=None):
         super().__init__(project, code, args)
         self.next_step = None
-        self.fs_root = os.path.join(get_project_dir(project), 'Freesurfer')
-        self.raw_mgz = os.path.join(self.fs_root, 'subjects', self.code, 'mri', 'T1.mgz')
-        self.new_mgz = os.path.join(self.working_dir, self.code + '.T1.nii.gz')
-        self.asegstat = ""
 
     def run(self):
-        rg = repo.Repository(project).get_researchgroup(code)
+        rg = repo.Repository(self.project).get_researchgroup(self.code)
+        print(rg)
+        flairraw = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
+        print(flairraw)
         if len(rg) == 0:
-            self.comments = "No Flair found."
+            self.comments = "No research group found."
             raise ProcessingError
         # Do the same type of check for FLAIR
+
+        if len(flairraw) == 0:
+            self.comments = "No FLAIR found."
+            raise ProcessingError
 
         t1mgz = os.path.join(self.mrifolder, 'T1.mgz')
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
 
-        self.mgz_convert(t1mgz,basics.t1)
-        self.mgz_convert(wmparcmgz,basics.wmmask)
+        flairraw = os.path.join(self.project,'Raw',self.scan_code,flairraw+'.FLAIR.nii.gz')
+
+        self.mgz_convert(t1mgz,self.t1)
+        self.mgz_convert(wmparcmgz,self.wmmask)
         self.aseg_convert(asegstats)
         self.make_allmask(maskmgz)
+        self.make_wmhmask(self.t1, flairraw)
 
         # get the flair file, make wmh mask
         #flairraw = glob.glob(get_project_dir(basics.project)+'/Raw/'+code[0:19]+'/*.FLAIR.nii.gz')[0]
         # TODO: use the `repo` method to get the "Code" for the Flair by `ImageType`.
-        LOGGER.debug(flairraw)
+        #LOGGER.debug(flairraw)
         #flairraw = os.path.join(basics.project,'Raw',code[0:11],code+'.FLAIR.nii.gz')
-        self.make_wmhmask(self.t1, flairraw)
 
     def aseg_convert(self, aseg_raw):
         cmd = f'asegstats2table -i {aseg_raw} -d comma -t {self.asegstats}'
         self.fs(cmd)
-        print(self.code + ': aseg2stats done! ')
+        LOGGER.info(self.code + ': aseg2stats done! ')
 
     def mgz_convert(self, mgz, nii):
         cmd = f'mri_convert {mgz} {nii}'
         self.fs(cmd)
-        print(self.code + ': mgz_convert done! ')
+        LOGGER.info(self.code + ': mgz_convert done! ')
 
     def make_allmask(self, maskmgz):
         img = nib.load(maskmgz)
@@ -252,12 +257,12 @@ class Stage(Commands):
         maskimg = nib.Nifti1Image(mask,img.affine)
         nib.save(maskimg,self.allmask)
 
-        print(self.code + ': make all masks done! ')
+        LOGGER.info(self.code + ': makeall masks done! ')
 
     def make_wmhmask(self, t1, input_flair):
-    """
-    WMH removal
-    """
+        """
+        WMH removal
+        """
 
         # make a wmh folder for all wmhmask processing
         wmhlesion_folder = os.path.join(self.working_dir,'wmhlesion')
@@ -289,16 +294,16 @@ class Stage(Commands):
         # We need to catch any MATLAB exceptions, print to Linux standard error
         # and return a non-zero exit code so that the Python wrapper can catch that.
         wmh_cmd = f"""
-try
-    addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
-    addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
-    spm_jobman('initcfg');
-    ps_LST_lpa('{unzipped_flair}');
-    exit(0)
-catch MEexception
-    fprintf(2, 'Caught unhandled matlab exception.');
-    exit(-1);
-end"""
+                        try
+                            addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
+                            addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
+                            spm_jobman('initcfg');
+                            ps_LST_lpa('{unzipped_flair}');
+                            exit(0)
+                        catch MEexception
+                            fprintf(2, 'Caught unhandled matlab exception.');
+                            exit(-1);
+                        end"""
         LOGGER.debug(wmh_cmd)
 
         matlab_script = self._prep_cmd_script(wmh_cmd, 'wmh.m')
@@ -371,10 +376,40 @@ class Analyze(Stage):
         self.volume = -1
         self.icv = -1
         self.icv_normed = -1
+
+        self.countwm = -1
+        self.volwm = -1
+        self.icv_normedwm = -1
+
         self.pvsstats = os.path.join(self.working_dir, self.code+'-pvsstats.csv')
         self.comp = os.path.join(self.working_dir,self.code+'-frangi_comp.nii.gz')
 
-# need to fix wmh conditional
+    def run(self):
+ 
+        frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
+        self.frangi_analysis(self.t1, self.allmask, 0.0025, frangimask_all,wmhmask = self.wmhmask)
+
+        self.icv_calc(self.asegstats)
+        count_all, vol_all, icv_all = self.pvs_stats(frangimask_all)
+
+
+        frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
+        self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm,region = 'wm',wmhmask = self.wmhmask)
+
+        self.pvs_stats(frangimask_wm)
+        count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm)
+
+        subject = self.code
+        researchgroup = self.researchgroup
+
+        col = ['subjects','research group','pvscount','pvsvol','icv norm','pvscountwm','pvsvolwm','icv norm wm']
+        df = pd.DataFrame(data=zip(subject,researchgroup,count_all,vol_all,icv_all,count_allwm,vol_allwm,icv_allwm),columns=col)
+        df.to_csv(self.working_dir, index=True)
+
+        
+
+    
+
     def frangi_analysis(self,t1,mask,threshold,output,region='all',wmhmask=None):
 
         # hessian calculation
@@ -411,14 +446,14 @@ class Analyze(Stage):
 
 
         ################# for WMH removal ###############
-        print(self.code + ': frangi analysis done! ')
+        LOGGER.info(self.code + ': frangi analysis done! ')
 
 
     def icv_calc(self,asegstats):
         stat = pd.read_csv(asegstats)
         self.icv = stat['EstimatedTotalIntraCranialVol'][0]
 
-        print(self.code + ': icv calc done! ')
+        LOGGER.info(self.code + ': icv calc done! ')
 
 
     def pvs_stats(self,frangimask):
@@ -430,14 +465,14 @@ class Analyze(Stage):
         self.qit(cmd_maskmeas)
 
         stats = pd.read_csv(self.pvsstats,index_col=0)
-        self.count =  stats.loc['component_count'][0]    # number of PVS counted
-        self.vol = stats.loc['component_sum'][0]       # number of voxels
+        count =  stats.loc['component_count'][0]    # number of PVS counted
+        vol = stats.loc['component_sum'][0]       # number of voxels
 
-        self.icv_normed = self.vol / self.icv
+        icv_normed = self.vol / self.icv
 
-        print(self.code + ': pvs stats done! ')
+        LOGGER.info(self.code + ': pvs stats done! ')
 
-        return stats
+        return count,vol,icv_normed
 
 
 def run():
