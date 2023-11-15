@@ -32,12 +32,7 @@ class Repository(object):
         """
         Gets the specified image for a subject (T1 or FLAIR)
         """
-        sql = f"""
-            SELECT Code 
-            FROM ImageList.{self.project} 
-            WHERE ScanCode = '{code}'
-                AND ImageType = '{image_type}'
-            """
+        sql = f"SELECT Code FROM ImageList.{self.project} WHERE ScanCode = '{code}' AND ImageType = '{image_type}'"
         cursor = self.db.execute(sql)
         return _trans_to_dict(cursor)
 

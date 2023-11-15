@@ -200,13 +200,12 @@ class Stage(Commands):
     def run(self):
         rg = repo.Repository(self.project).get_researchgroup(self.code)
         print(rg)
-        flairraw = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
+        flaircheck = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
         print(flairraw)
         if len(rg) == 0:
             self.comments = "No research group found."
             raise ProcessingError
         # Do the same type of check for FLAIR
-
         if len(flairraw) == 0:
             self.comments = "No FLAIR found."
             raise ProcessingError
@@ -216,7 +215,7 @@ class Stage(Commands):
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
 
-        flairraw = os.path.join(self.project,'Raw',self.scan_code,flairraw+'.FLAIR.nii.gz')
+        flairraw = os.path.join(self.project,'Raw',self.scan_code,flaircheck[0]+'.FLAIR.nii.gz')
 
         self.mgz_convert(t1mgz,self.t1)
         self.mgz_convert(wmparcmgz,self.wmmask)
