@@ -356,13 +356,6 @@ class Stage(BaseStep):
 
         return todo
 
-    def run(self):
-        """
-        This is the entry point method is called by `pijp/engine`.
-        Start your code here. Create "helper" methods to keep the code clean.
-        """
-        pass
-
 
 class Analyze(Stage):
     def __init__(self, project, code, args=None):
@@ -403,10 +396,6 @@ class Analyze(Stage):
         col = ['subjects','research group','pvscount','pvsvol','icv norm','pvscountwm','pvsvolwm','icv norm wm']
         df = pd.DataFrame(data=zip(subject,researchgroup,count_all,vol_all,icv_all,count_allwm,vol_allwm,icv_allwm),columns=col)
         df.to_csv(self.working_dir, index=True)
-
-
-
-
 
     def frangi_analysis(self,t1,mask,threshold,output,region='all',wmhmask=None):
 
