@@ -20,7 +20,7 @@ from scipy import stats
 import glob
 
 # Before loading NUMPY: HACK to avoid seg fault on some hosts.
-#os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
 
 import repo
 from pijp import util, coding
@@ -45,11 +45,10 @@ def get_case_dir(project, researchgroup, code):
 
 
 class BaseStep(Step):
-    def __init__(self, project, code, args=None):
-        super().__init__(project, code, args)
+    def __init__(self, project, code, args):
+        super(BaseStep, self).__init__(project, code, args)
         self.datetime = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%s')
-        # this will be changed when i run this on Raw:
-        # ADNI3_FSdn/Raw
+        #  ADNI3_frangi gets its FS data from ADNI3_FSdn (Denoise).
         self.data = os.path.join(get_project_dir('ADNI3_FSdn'),'Freesurfer','subjects')
         self.project = project
         self.code = code
@@ -149,12 +148,11 @@ class Commands(BaseStep):
     # moment, I have it so this already includes running the command
 
     def __init__(self, project, code, args=None):
-        super().__init__(project, code, args)
+        super(Commands, self).__init__(project, code, args)
         self.exportfs = '7.3.2'
         self.exportants = 'ants-2017-12-07'
         self.exportfsl = '6.0.0'
         self.exportmatlab = 'R2019a'
-
 
     def qit(self,func):
         cmd = 'export JAVA_HOME=/opt/qit/jdk-12.0.2 \n'
@@ -163,7 +161,7 @@ class Commands(BaseStep):
         self._run_cmd(cmd,script_name='qit_func')     # do i need self in these?
         # script_name='qitfunc'
 
-    def fs(self,func):
+    def fs(self, func):
         cmd = f'export FSVERSION={self.exportfs} && {func}'
         self._run_cmd(cmd,script_name='fs_func')
         # script_name='fsfunc'
@@ -185,19 +183,20 @@ class Commands(BaseStep):
         self._run_cmd(cmd,script_name='matlab_func')
 
 
-class Stage(Commands):
+class Stage(BaseStep):
     process_name = PROCESS_TITLE
-    step_name = 'stage'
+    step_name = 'Stage'
     step_cli = 'stage'
     cpu = 1
     mem = '1G'
 
-
-    def __init__(self, project, code, args=None):
-        super().__init__(project, code, args)
+    def __init__(self, project, code, args):
+        super(Stage, self).__init__(project, code, args)
         self.next_step = None
+        self.commands = Commands(project, code, args)
 
     def run(self):
+        ipdb.set_trace()
         rg = repo.Repository(self.project).get_researchgroup(self.code)
         print(rg)
         flaircheck = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
@@ -231,12 +230,13 @@ class Stage(Commands):
 
     def aseg_convert(self, aseg_raw):
         cmd = f'asegstats2table -i {aseg_raw} -d comma -t {self.asegstats}'
-        self.fs(cmd)
+        self.commands.fs(cmd)
         LOGGER.info(self.code + ': aseg2stats done! ')
 
     def mgz_convert(self, mgz, nii):
         cmd = f'mri_convert {mgz} {nii}'
-        self.fs(cmd)
+        self.commands.fs(cmd)
+        LOGGER.debug(f"converted output:{nii}")
         LOGGER.info(self.code + ': mgz_convert done! ')
 
     def make_allmask(self, maskmgz):
@@ -288,7 +288,6 @@ class Stage(Commands):
             with open(unzipped_flair, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-        ipdb.set_trace()
         # Add an extra m file to run with more complex commands.
         # We need to catch any MATLAB exceptions, print to Linux standard error
         # and return a non-zero exit code so that the Python wrapper can catch that.
@@ -384,7 +383,7 @@ class Analyze(Stage):
         self.comp = os.path.join(self.working_dir,self.code+'-frangi_comp.nii.gz')
 
     def run(self):
- 
+
         frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
         self.frangi_analysis(self.t1, self.allmask, 0.0025, frangimask_all,wmhmask = self.wmhmask)
 
@@ -405,9 +404,9 @@ class Analyze(Stage):
         df = pd.DataFrame(data=zip(subject,researchgroup,count_all,vol_all,icv_all,count_allwm,vol_allwm,icv_allwm),columns=col)
         df.to_csv(self.working_dir, index=True)
 
-        
 
-    
+
+
 
     def frangi_analysis(self,t1,mask,threshold,output,region='all',wmhmask=None):
 
