@@ -63,11 +63,9 @@ class BaseStep(Step):
         self.t1 = os.path.join(self.working_dir, self.code + "-T1.nii.gz")
         self.allmask = os.path.join(self.working_dir, self.code + "-allmask.nii.gz")
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
-        # self.frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded.nii.gz")    ## removing these because it doesn't make sense w the wmh removal
-        # self.frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, self.code + "-wmhmask.nii.gz")   ## may need to fix this depending on where the mask lands
+        self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
 
         # If you need to get time point, site id, subject number, or other meta data
         # that is stored in the series code, use this object.
@@ -164,19 +162,15 @@ class Commands(BaseStep):
     def fs(self, func):
         cmd = f'export FSVERSION={self.exportfs} && {func}'
         self._run_cmd(cmd,script_name='fs_func')
-        # script_name='fsfunc'
 
     def ants(self,func):
         cmd = f'export ANTSVERSION={self.exportants} && {func}'
         self._run_cmd(cmd,script_name='ants_func')
-        # script_name='antsfunc'
 
     def fsl(self,func):
         cmd = f'export FSLVERSION={self.exportfsl} && {func}'
         self._run_cmd(cmd,script_name='fsl_func')
-        # script_name='fslfunc'
 
-    # this may not work
     def matlab(self, func):
         cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab {func}'
         print(cmd)
@@ -196,37 +190,35 @@ class Stage(BaseStep):
         self.commands = Commands(project, code, args)
 
     def run(self):
-        ipdb.set_trace()
         rg = repo.Repository(self.project).get_researchgroup(self.code)
-        print(rg)
-        flaircheck = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
-        print(flairraw)
+        LOGGER.debug(f"Research Group {rg}")
+
+        flair_check = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
+        LOGGER.debug(f"FLAIR check {flair_check[0]['Code']}")
         if len(rg) == 0:
-            self.comments = "No research group found."
-            raise ProcessingError
-        # Do the same type of check for FLAIR
-        if len(flairraw) == 0:
-            self.comments = "No FLAIR found."
-            raise ProcessingError
+            raise ProcessingError("No Research Group found.")
+
+        if len(flair_check) == 0:
+            raise ProcessingError("No FLAIR found.")
+
+        elif len(flair_check) > 1:
+            raise ProcessingError("Found more than 1 FLAIR.")
 
         t1mgz = os.path.join(self.mrifolder, 'T1.mgz')
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
 
-        flairraw = os.path.join(self.project,'Raw',self.scan_code,flaircheck[0]+'.FLAIR.nii.gz')
+        proj_root = get_process_dir(self.project)
+        flair_raw = os.path.join(proj_root, '..', 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
+        if not os.path.exists(flair_raw):
+            raise ProcessingError("FALIR nifti is missing from `Raw`")
 
-        self.mgz_convert(t1mgz,self.t1)
-        self.mgz_convert(wmparcmgz,self.wmmask)
+        self.mgz_convert(t1mgz, self.t1)
+        self.mgz_convert(wmparcmgz, self.wmmask)
         self.aseg_convert(asegstats)
         self.make_allmask(maskmgz)
-        self.make_wmhmask(self.t1, flairraw)
-
-        # get the flair file, make wmh mask
-        #flairraw = glob.glob(get_project_dir(basics.project)+'/Raw/'+code[0:19]+'/*.FLAIR.nii.gz')[0]
-        # TODO: use the `repo` method to get the "Code" for the Flair by `ImageType`.
-        #LOGGER.debug(flairraw)
-        #flairraw = os.path.join(basics.project,'Raw',code[0:11],code+'.FLAIR.nii.gz')
+        self.make_wmhmask(self.t1, flair_raw)
 
     def aseg_convert(self, aseg_raw):
         cmd = f'asegstats2table -i {aseg_raw} -d comma -t {self.asegstats}'
@@ -263,27 +255,28 @@ class Stage(BaseStep):
         WMH removal
         """
 
-        # make a wmh folder for all wmhmask processing
-        wmhlesion_folder = os.path.join(self.working_dir,'wmhlesion')
-        os.makedirs(os.path.join(self.working_dir,'wmhlesion'),exist_ok=True)
-        shutil.copy(input_flair,wmhlesion_folder)
-        flair = glob.glob(wmhlesion_folder+"/*FLAIR.nii.gz")[0]
-        #rename_flair = os.rename(input_flair,os.path.join(self.working_dir,self.code+"FLAIR.nii.gz"))
-        print(flair)
+        ipdb.set_trace()
+        wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
+        os.makedirs(os.path.join(self.working_dir, 'wmhlesion'), exist_ok=True)
+        shutil.copy(input_flair, wmhlesion_folder)
+        flair = glob.glob(os.path.join(wmhlesion_folder, "*FLAIR.nii.gz"))[0]
+
         # bias correct flair
         flair_bc = os.path.join(wmhlesion_folder,self.code+"_FLAIRbc.nii.gz")
         biascorrect = f'N4BiasFieldCorrection -i {flair} -o {flair_bc}'
-        self.ants(biascorrect)
+        self.commands.ants(biascorrect)
 
         #register flair
-        flair_reg = os.path.join(wmhlesion_folder,self.code+"_FLAIRbcreg.nii.gz")
+        flair_reg = os.path.join(wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
+        # NOTE: You may want to use a differnet cost function b/c these are different modalities.
+        # I think the default is correlation coeff.
         register = f'flirt -in {flair_bc} -ref {t1} -out {flair_reg}'
-        self.fsl(register)
+        self.commands.fsl(register)
 
         # TODO: this needs to be fixed
         ## currently using LPA
         # first unzip the files
-        unzipped_flair = os.path.join(wmhlesion_folder,self.code+'_FLAIR.nii')
+        unzipped_flair = os.path.join(wmhlesion_folder, self.code + '_FLAIR.nii')
         with gzip.open(input_flair, 'rb') as f_in:
             with open(unzipped_flair, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
@@ -297,23 +290,24 @@ class Stage(BaseStep):
                             addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
                             spm_jobman('initcfg');
                             ps_LST_lpa('{unzipped_flair}');
-                            exit(0);
-                        catch MEexception
-                            fprintf(2, 'Caught unhandled matlab exception.');
+                            exit;
+                        catch ME
+                            report = ME.getReport;
+                            fprintf(2, report);
                             exit(-1);
                         end"""
-        LOGGER.debug(wmh_cmd)
 
         matlab_script = self._prep_cmd_script(wmh_cmd, 'wmh.m')
         LOGGER.debug("MATLAB m file:{matlab_script}")
 
-        matlab_cmd = f'-nodesktop -noFigureWindows -nosplash -r {matlab_script}'
+        # Remove `.m` extension when calling.
+        matlab_script = matlab_script.replace(".m", "")
+        matlab_cmd = f"-nodesktop -noFigureWindows -nojvm -nosplash -r {matlab_script}"
         LOGGER.info(matlab_cmd)
-        self.matlab(matlab_cmd)
+        self.commands.matlab(matlab_cmd)
 
         wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
         shutil.copy(wmhmask, self.working_dir)
-        self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
 
         LOGGER.info(self.code + ': wmhmasks done!')
 
@@ -419,9 +413,6 @@ class Analyze(Stage):
         cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
         self.qit(cmd_frangi)
 
-
-        ################# for WMH removal ###############
-
         if wmhmask is not None:
             pre_output = os.path.join(self.working_dir,self.code+'-frangimask'+region+'-thresholded.nii.gz')
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {pre_output}'
@@ -434,10 +425,7 @@ class Analyze(Stage):
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
             self.qit(cmd_threshold)
 
-
-        ################# for WMH removal ###############
         LOGGER.info(self.code + ': frangi analysis done! ')
-
 
     def icv_calc(self,asegstats):
         stat = pd.read_csv(asegstats)
