@@ -314,7 +314,10 @@ exit;"""
         LOGGER.debug(f"MATLAB m file:{matlab_script}")
         self.commands.matlab(matlab_script)
 
-        wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
+        # Orig file path.
+        #wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
+        # One that was generated.
+        wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_m' + self.code + '_FLAIR.nii')
         shutil.copy(wmhmask, self.working_dir)
 
         LOGGER.info(self.code + ': wmhmasks done!')
