@@ -255,7 +255,6 @@ class Stage(BaseStep):
         WMH removal
         """
 
-        ipdb.set_trace()
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         os.makedirs(os.path.join(self.working_dir, 'wmhlesion'), exist_ok=True)
         shutil.copy(input_flair, wmhlesion_folder)
