@@ -297,7 +297,7 @@ class Stage(BaseStep):
                             addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
                             spm_jobman('initcfg');
                             ps_LST_lpa('{unzipped_flair}');
-                            exit(0)
+                            exit(0);
                         catch MEexception
                             fprintf(2, 'Caught unhandled matlab exception.');
                             exit(-1);
@@ -305,9 +305,12 @@ class Stage(BaseStep):
         LOGGER.debug(wmh_cmd)
 
         matlab_script = self._prep_cmd_script(wmh_cmd, 'wmh.m')
+        LOGGER.debug("MATLAB m file:{matlab_script}")
+
         matlab_cmd = f'-nodesktop -noFigureWindows -nosplash -r {matlab_script}'
         LOGGER.info(matlab_cmd)
         self.matlab(matlab_cmd)
+
         wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
         shutil.copy(wmhmask, self.working_dir)
         self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
