@@ -164,25 +164,42 @@ class Commands(BaseStep):
         self._run_cmd(cmd,script_name='fs_func')
 
     def ants(self,func):
-        cmd = f'export ANTSVERSION={self.exportants} && {func}'
+        ncores = Stage.cpu
+        # We must use the same number of cores as the class has set.
+        # We can increase, this but then we limit the number of overall parallel jobs.
+        cmd = f'export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={ncores} && export ANTSVERSION={self.exportants} && {func}'
         self._run_cmd(cmd,script_name='ants_func')
 
     def fsl(self,func):
         cmd = f'export FSLVERSION={self.exportfsl} && {func}'
         self._run_cmd(cmd,script_name='fsl_func')
 
-    def matlab(self, func):
-        cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab {func}'
-        print(cmd)
-        self._run_cmd(cmd,script_name='matlab_func')
+    def matlab(self, script):
+        #  We need the sub process, to CD to the directory with the m file.
+        # Then strip off the `.m` extension.
+        _script = os.path.basename(script).replace(".m", "")
+        cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab -nodesktop -noFigureWindows -nojvm -nosplash -r {_script}'
+
+        proc = subprocess.Popen(cmd, shell=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        cwd=os.path.dirname(script)
+        )
+
+        output, error = proc.communicate()
+        LOGGER.error(error)
+        LOGGER.info(output)
+
+        if proc.returncode != 0:
+            raise Exception('MATLAB FAILURE. Error:\n' + error)
 
 
 class Stage(BaseStep):
     process_name = PROCESS_TITLE
     step_name = 'Stage'
     step_cli = 'stage'
-    cpu = 1
-    mem = '1G'
+    cpu = 4
+    mem = '4G'
 
     def __init__(self, project, code, args):
         super(Stage, self).__init__(project, code, args)
@@ -280,30 +297,22 @@ class Stage(BaseStep):
             with open(unzipped_flair, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
-        # Add an extra m file to run with more complex commands.
-        # We need to catch any MATLAB exceptions, print to Linux standard error
-        # and return a non-zero exit code so that the Python wrapper can catch that.
         wmh_cmd = f"""
-                        try
-                            addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
-                            addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
-                            spm_jobman('initcfg');
-                            ps_LST_lpa('{unzipped_flair}');
-                            exit;
-                        catch ME
-                            report = ME.getReport;
-                            fprintf(2, report);
-                            exit(-1);
-                        end"""
+try
+    addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
+    addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
+    spm_jobman('initcfg');
+    ps_LST_lpa('{unzipped_flair}');
+catch ME
+    report = ME.getReport;
+    fprintf(2, report);
+    exit(-1);
+end
+exit;"""
 
         matlab_script = self._prep_cmd_script(wmh_cmd, 'wmh.m')
-        LOGGER.debug("MATLAB m file:{matlab_script}")
-
-        # Remove `.m` extension when calling.
-        matlab_script = matlab_script.replace(".m", "")
-        matlab_cmd = f"-nodesktop -noFigureWindows -nojvm -nosplash -r {matlab_script}"
-        LOGGER.info(matlab_cmd)
-        self.commands.matlab(matlab_cmd)
+        LOGGER.debug(f"MATLAB m file:{matlab_script}")
+        self.commands.matlab(matlab_script)
 
         wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
         shutil.copy(wmhmask, self.working_dir)
