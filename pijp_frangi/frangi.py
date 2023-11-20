@@ -225,11 +225,13 @@ class Stage(BaseStep):
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
+        
+        ipdb.set_trace()
 
-        proj_root = get_process_dir(self.project)
-        flair_raw = os.path.join(proj_root, '..', 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
+        proj_root = get_project_dir(self.project)
+        flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
         if not os.path.exists(flair_raw):
-            raise ProcessingError("FALIR nifti is missing from `Raw`")
+            raise ProcessingError("FLAIR nifti is missing from `Raw`")
 
         self.mgz_convert(t1mgz, self.t1)
         self.mgz_convert(wmparcmgz, self.wmmask)
