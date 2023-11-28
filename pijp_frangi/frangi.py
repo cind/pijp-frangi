@@ -225,7 +225,7 @@ class Stage(BaseStep):
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
-        
+
 
         proj_root = get_project_dir(self.project)
         flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
@@ -419,11 +419,11 @@ class Analyze(Stage):
         cmd_hes = f'VolumeFilterHessian --input {t1} --mask {mask} --mode Norm --output {hes}'
         #ipdb.set_trace()
 
-        self.qit(cmd_hes)
+        self.commands.qit(cmd_hes)
 
         hes_stats = os.path.join(self.working_dir,self.code+'-hessianstats'+region+'.csv')
         cmd_hesstats = f'VolumeMeasure --input {hes} --output {hes_stats}'
-        self.qit(cmd_hesstats)
+        self.commands.qit(cmd_hesstats)
 
         hes_csv = pd.read_csv(hes_stats,index_col=0)
         half_max = hes_csv.loc['max'][0]/2
@@ -431,19 +431,19 @@ class Analyze(Stage):
         # frangi calculation
         frangi_mask = os.path.join(self.working_dir,self.code+'-frangimask'+region+'.nii.gz')
         cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
-        self.qit(cmd_frangi)
+        self.commands.qit(cmd_frangi)
 
         if wmhmask is not None:
             pre_output = os.path.join(self.working_dir,self.code+'-frangimask'+region+'-thresholded.nii.gz')
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {pre_output}'
-            self.qit(cmd_threshold)
+            self.commands.qit(cmd_threshold)
 
             cmd_removewmh = f'MaskSet --input {pre_output} --mask {wmhmask} --label {0} --output {output}'
-            self.qit(cmd_removewmh)
+            self.comamnds.qit(cmd_removewmh)
 
         else:
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
-            self.qit(cmd_threshold)
+            self.commands.qit(cmd_threshold)
 
         LOGGER.info(self.code + ': frangi analysis done! ')
 
@@ -457,10 +457,10 @@ class Analyze(Stage):
     def pvs_stats(self,frangimask):
         """ Calculates pvs stats. Fills in variables count and vol, returns stats table as calculated by MaskMeasure. """
         cmd_comp = f'MaskComponents --input {frangimask} --output {self.comp}'
-        self.qit(cmd_comp)
+        self.commands.qit(cmd_comp)
 
         cmd_maskmeas = f'MaskMeasure --input {self.comp} --comps --counts --output {self.pvsstats}'
-        self.qit(cmd_maskmeas)
+        self.commands.qit(cmd_maskmeas)
 
         stats = pd.read_csv(self.pvsstats,index_col=0)
         count =  stats.loc['component_count'][0]    # number of PVS counted
