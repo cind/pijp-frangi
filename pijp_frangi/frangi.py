@@ -226,7 +226,6 @@ class Stage(BaseStep):
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
         
-        ipdb.set_trace()
 
         proj_root = get_project_dir(self.project)
         flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
@@ -368,9 +367,16 @@ exit;"""
 
 
 class Analyze(Stage):
+    process_name = PROCESS_TITLE
+    step_name = 'Analyze'
+    step_cli = 'analyze'
+    cpu = 4
+    mem = '4G'
+
     def __init__(self, project, code, args=None):
         super().__init__(project, code, args)
         self.next_step = None
+        self.commands = Commands(project, code, args)
 
         # variables specific to this class
         self.count = -1
@@ -393,7 +399,6 @@ class Analyze(Stage):
         self.icv_calc(self.asegstats)
         count_all, vol_all, icv_all = self.pvs_stats(frangimask_all)
 
-
         frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
         self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm,region = 'wm',wmhmask = self.wmhmask)
 
@@ -412,6 +417,8 @@ class Analyze(Stage):
         # hessian calculation
         hes =  os.path.join(self.working_dir,self.code+'-hessian-'+region+'.nii.gz')
         cmd_hes = f'VolumeFilterHessian --input {t1} --mask {mask} --mode Norm --output {hes}'
+        #ipdb.set_trace()
+
         self.qit(cmd_hes)
 
         hes_stats = os.path.join(self.working_dir,self.code+'-hessianstats'+region+'.csv')
