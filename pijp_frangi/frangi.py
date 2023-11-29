@@ -152,27 +152,28 @@ class Commands(BaseStep):
         self.exportfsl = '6.0.0'
         self.exportmatlab = 'R2019a'
 
-    def qit(self,func):
+    def qit(self, func):
         cmd = 'export JAVA_HOME=/opt/qit/jdk-12.0.2 \n'
         cmd+= 'export PATH=$JAVA_HOME/bin:$PATH \n'
         cmd+= f'qit {func}'
-        self._run_cmd(cmd,script_name='qit_func')     # do i need self in these?
+        self._run_cmd(cmd, script_name='qit_func')     # do i need self in these?
         # script_name='qitfunc'
 
     def fs(self, func):
         cmd = f'export FSVERSION={self.exportfs} && {func}'
-        self._run_cmd(cmd,script_name='fs_func')
+        self._run_cmd(cmd, script_name='fs_func')
 
-    def ants(self,func):
+    def ants(self, func):
         ncores = Stage.cpu
         # We must use the same number of cores as the class has set.
         # We can increase, this but then we limit the number of overall parallel jobs.
         cmd = f'export ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS={ncores} && export ANTSVERSION={self.exportants} && {func}'
-        self._run_cmd(cmd,script_name='ants_func')
+        self._run_cmd(cmd, script_name='ants_func')
 
-    def fsl(self,func):
+    def fsl(self, func):
         cmd = f'export FSLVERSION={self.exportfsl} && {func}'
-        self._run_cmd(cmd,script_name='fsl_func')
+        self._run_cmd(cmd,
+                script_name='fsl_func')
 
     def matlab(self, script):
         #  We need the sub process, to CD to the directory with the m file.
@@ -254,7 +255,7 @@ class Stage(BaseStep):
         data = img.get_fdata()
         mask = np.zeros(np.shape(data))
 
-        seg = [2,10,11,12,13,26,41,49,50,51,52,58]
+        seg = [2, 10, 11, 12, 13, 26, 41, 49, 50, 51, 52, 58]
         wmh = 77
         # Do we need this if it should already not be included in the others?
         # or is it included? or maybe it doesn't matter since She wants me to
@@ -263,8 +264,8 @@ class Stage(BaseStep):
         for m in seg:
             mask[data == m] = m
 
-        maskimg = nib.Nifti1Image(mask,img.affine)
-        nib.save(maskimg,self.allmask)
+        maskimg = nib.Nifti1Image(mask, img.affine)
+        nib.save(maskimg, self.allmask)
 
         LOGGER.info(self.code + ': makeall masks done! ')
 
@@ -279,7 +280,7 @@ class Stage(BaseStep):
         flair = glob.glob(os.path.join(wmhlesion_folder, "*FLAIR.nii.gz"))[0]
 
         # bias correct flair
-        flair_bc = os.path.join(wmhlesion_folder,self.code+"_FLAIRbc.nii.gz")
+        flair_bc = os.path.join(wmhlesion_folder, self.code + "_FLAIRbc.nii.gz")
         biascorrect = f'N4BiasFieldCorrection -i {flair} -o {flair_bc}'
         self.commands.ants(biascorrect)
 
@@ -388,19 +389,19 @@ class Analyze(Stage):
         self.volwm = -1
         self.icv_normedwm = -1
 
-        self.pvsstats = os.path.join(self.working_dir, self.code+'-pvsstats.csv')
-        self.comp = os.path.join(self.working_dir,self.code+'-frangi_comp.nii.gz')
+        self.pvsstats = os.path.join(self.working_dir, self.code + '-pvsstats.csv')
+        self.comp = os.path.join(self.working_dir, self.code + '-frangi_comp.nii.gz')
 
     def run(self):
 
         frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-        self.frangi_analysis(self.t1, self.allmask, 0.0025, frangimask_all,wmhmask = self.wmhmask)
+        self.frangi_analysis(self.t1, self.allmask, 0.0025, frangimask_all, wmhmask = self.wmhmask)
 
         self.icv_calc(self.asegstats)
         count_all, vol_all, icv_all = self.pvs_stats(frangimask_all)
 
         frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
-        self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm,region = 'wm',wmhmask = self.wmhmask)
+        self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
 
         self.pvs_stats(frangimask_wm)
         count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm)
@@ -409,32 +410,32 @@ class Analyze(Stage):
         researchgroup = self.researchgroup
 
         col = ['subjects','research group','pvscount','pvsvol','icv norm','pvscountwm','pvsvolwm','icv norm wm']
-        df = pd.DataFrame(data=zip(subject,researchgroup,count_all,vol_all,icv_all,count_allwm,vol_allwm,icv_allwm),columns=col)
+        df = pd.DataFrame(data=zip(subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm),columns=col)
         df.to_csv(self.working_dir, index=True)
 
-    def frangi_analysis(self,t1,mask,threshold,output,region='all',wmhmask=None):
+    def frangi_analysis(self, t1, mask, threshold, output, region='all',wmhmask=None):
 
         # hessian calculation
-        hes =  os.path.join(self.working_dir,self.code+'-hessian-'+region+'.nii.gz')
+        hes =  os.path.join(self.working_dir, self.code + '-hessian-' + region + '.nii.gz')
         cmd_hes = f'VolumeFilterHessian --input {t1} --mask {mask} --mode Norm --output {hes}'
         #ipdb.set_trace()
 
         self.commands.qit(cmd_hes)
 
-        hes_stats = os.path.join(self.working_dir,self.code+'-hessianstats'+region+'.csv')
+        hes_stats = os.path.join(self.working_dir, self.code + '-hessianstats' + region + '.csv')
         cmd_hesstats = f'VolumeMeasure --input {hes} --output {hes_stats}'
         self.commands.qit(cmd_hesstats)
 
-        hes_csv = pd.read_csv(hes_stats,index_col=0)
+        hes_csv = pd.read_csv(hes_stats, index_col=0)
         half_max = hes_csv.loc['max'][0]/2
 
         # frangi calculation
-        frangi_mask = os.path.join(self.working_dir,self.code+'-frangimask'+region+'.nii.gz')
+        frangi_mask = os.path.join(self.working_dir, self.code +'-frangimask' + region + '.nii.gz')
         cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
         self.commands.qit(cmd_frangi)
 
         if wmhmask is not None:
-            pre_output = os.path.join(self.working_dir,self.code+'-frangimask'+region+'-thresholded.nii.gz')
+            pre_output = os.path.join(self.working_dir, self.code + '-frangimask' + region + '-thresholded.nii.gz')
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {pre_output}'
             self.commands.qit(cmd_threshold)
 
@@ -447,14 +448,14 @@ class Analyze(Stage):
 
         LOGGER.info(self.code + ': frangi analysis done! ')
 
-    def icv_calc(self,asegstats):
+    def icv_calc(self, asegstats):
         stat = pd.read_csv(asegstats)
         self.icv = stat['EstimatedTotalIntraCranialVol'][0]
 
         LOGGER.info(self.code + ': icv calc done! ')
 
 
-    def pvs_stats(self,frangimask):
+    def pvs_stats(self, frangimask):
         """ Calculates pvs stats. Fills in variables count and vol, returns stats table as calculated by MaskMeasure. """
         cmd_comp = f'MaskComponents --input {frangimask} --output {self.comp}'
         self.commands.qit(cmd_comp)
@@ -462,7 +463,7 @@ class Analyze(Stage):
         cmd_maskmeas = f'MaskMeasure --input {self.comp} --comps --counts --output {self.pvsstats}'
         self.commands.qit(cmd_maskmeas)
 
-        stats = pd.read_csv(self.pvsstats,index_col=0)
+        stats = pd.read_csv(self.pvsstats, index_col=0)
         count =  stats.loc['component_count'][0]    # number of PVS counted
         vol = stats.loc['component_sum'][0]       # number of voxels
 
@@ -470,7 +471,7 @@ class Analyze(Stage):
 
         LOGGER.info(self.code + ': pvs stats done! ')
 
-        return count,vol,icv_normed
+        return count, vol, icv_normed
 
 
 def run():
