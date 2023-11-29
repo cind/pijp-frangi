@@ -354,8 +354,8 @@ exit;"""
         call. There are many things you might do here, this is just one simple
         example.
         """
-        # Use use the database VIEW `ImageList.<project>` to get the SeriesCodes for the imagetype we need.
-        all_codes = ProcessingLog().get_project_images(project_name, image_type=None)
+        # Use use the database VIEW `ImageList.<project>` to get the SeriesCodes for the `Step` we need.
+        all_codes = ProcessingLog().get_project_images(project_name, image_type='T1')
 
         # We typically want to exclude codes we've already run or attempted.
         attempted_rows = ProcessingLog().get_step_attempted(project_name, PROCESS_TITLE, 'stage')
