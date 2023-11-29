@@ -65,7 +65,7 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_m' + self.code + '_FLAIR.nii')
+        self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
 
         # If you need to get time point, site id, subject number, or other meta data
         # that is stored in the series code, use this object.
@@ -381,7 +381,7 @@ class Analyze(Stage):
 
         # variables specific to this class
         self.count = -1
-        self.vol = -1
+        self.volume = -1
         self.icv = -1
         self.icv_normed = -1
 
@@ -409,17 +409,9 @@ class Analyze(Stage):
         subject = self.code
         researchgroup = self.researchgroup
 
-
-        #ipdb.set_trace()
-
         col = ['subjects','research group','pvscount','pvsvol','icv norm','pvscountwm','pvsvolwm','icv norm wm']
-<<<<<<< Updated upstream
-        df = pd.DataFrame(data=zip(subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm),columns=col)
-        df.to_csv(self.working_dir, index=True)
-=======
-        df = pd.DataFrame(data=[[subject,researchgroup,str(count_all),str(vol_all),str(icv_all),str(count_allwm),str(vol_allwm),str(icv_allwm)]],columns=col)
-        df.to_csv(os.path.join(self.working_dir,self.code+'_pvs_info.csv'), index=True)
->>>>>>> Stashed changes
+        df = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm]],columns=col)
+        df.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=True)
 
     def frangi_analysis(self, t1, mask, threshold, output, region='all',wmhmask=None):
 
@@ -448,7 +440,7 @@ class Analyze(Stage):
             self.commands.qit(cmd_threshold)
 
             cmd_removewmh = f'MaskSet --input {pre_output} --mask {wmhmask} --label {0} --output {output}'
-            self.commands.qit(cmd_removewmh)
+            self.comamnds.qit(cmd_removewmh)
 
         else:
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
@@ -475,15 +467,7 @@ class Analyze(Stage):
         count =  stats.loc['component_count'][0]    # number of PVS counted
         vol = stats.loc['component_sum'][0]       # number of voxels
 
-        self.vol = vol
-        self.count = count
-
-        icv_normed = vol / self.icv
-
-        self.icv_normed = icv_normed
-
-
-
+        icv_normed = self.vol / self.icv
 
         LOGGER.info(self.code + ': pvs stats done! ')
 
