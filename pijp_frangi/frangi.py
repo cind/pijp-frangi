@@ -232,9 +232,9 @@ class Stage(BaseStep):
         flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
         if not os.path.exists(flair_raw):
             raise ProcessingError("FLAIR nifti is missing from `Raw`")
+        
 
         self.mgz_convert(t1mgz, self.t1)
-        self.mgz_convert(wmparcmgz, self.wmmask)
         self.aseg_convert(asegstats)
         self.make_allmask(maskmgz)
         self.make_wmhmask(self.t1, flair_raw)
@@ -268,6 +268,22 @@ class Stage(BaseStep):
         nib.save(maskimg, self.allmask)
 
         LOGGER.info(self.code + ': makeall masks done! ')
+
+    def make_whitemask(self, wmparcmgz):
+        img = nib.load(wmparcmgz)
+        data = img.get_fdata()
+        mask = np.zeros(np.shape(data))
+
+        seg = list(range(3001,3035)) + list(range(4001,4035)) + [5001,5002]
+        
+        for m in seg:
+            mask[data == m] = m
+
+        maskimg = nib.Nifti1Image(mask, img.affine)
+        nib.save(maskimg, self.wmmask)
+
+        LOGGER.info(self.code + ': white matter mask done! ')
+        
 
     def make_wmhmask(self, t1, input_flair):
         """
