@@ -310,8 +310,13 @@ class Stage(BaseStep):
         for m in seg:
             mask[data == m] = m
 
+        wmmask_vol = os.path.join(self.working_dir, self.code + "-wmmask_vol.nii.gz")
         maskimg = nib.Nifti1Image(mask, img.affine)
-        nib.save(maskimg, self.wmmask)
+        nib.save(maskimg, wmmask_vol)
+
+        cmd_threshold = f'VolumeThreshold --input {wmmask_vol} --threshold {0.5} --output {self.wmmask}'
+        self.commands.qit(cmd_threshold)
+
 
         LOGGER.info(self.code + ': white matter mask done! ')
 
