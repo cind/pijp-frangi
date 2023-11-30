@@ -356,7 +356,7 @@ try
     addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
     addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
     spm_jobman('initcfg');
-    ps_LST_lga('{t1}','{unzipped_flair}');
+    ps_LST_lga('{unzipped_flair}','{t1}');
 catch ME
     report = ME.getReport;
     fprintf(2, report);
