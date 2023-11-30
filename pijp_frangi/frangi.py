@@ -179,7 +179,7 @@ class Commands(BaseStep):
         #  We need the sub process, to CD to the directory with the m file.
         # Then strip off the `.m` extension.
         _script = os.path.basename(script).replace(".m", "")
-        cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab -nodesktop -noFigureWindows -nojvm -nosplash -r {_script}'
+        cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r {_script}'
 
         proc = subprocess.Popen(cmd, shell=True,
                         stdout=subprocess.PIPE,
@@ -192,15 +192,20 @@ class Commands(BaseStep):
         LOGGER.info(output)
 
         if proc.returncode != 0:
+            error = error.decode('ascii', errors='ignore')
             raise Exception('MATLAB FAILURE. Error:\n' + error)
 
 
 class Stage(BaseStep):
+    """
+    Collect images, and run LST in MATLAB.
+    LST uses SPM and requires more than 4GB of memory.
+    """
     process_name = PROCESS_TITLE
     step_name = 'Stage'
     step_cli = 'stage'
-    cpu = 4
-    mem = '4G'
+    cpu = 1
+    mem = '8G'
 
     def __init__(self, project, code, args):
         super(Stage, self).__init__(project, code, args)
@@ -232,7 +237,7 @@ class Stage(BaseStep):
         flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
         if not os.path.exists(flair_raw):
             raise ProcessingError("FLAIR nifti is missing from `Raw`")
-        
+
 
         self.mgz_convert(t1mgz, self.t1)
         self.aseg_convert(asegstats)
@@ -275,7 +280,7 @@ class Stage(BaseStep):
         mask = np.zeros(np.shape(data))
 
         seg = list(range(3001,3035)) + list(range(4001,4035)) + [5001,5002]
-        
+
         for m in seg:
             mask[data == m] = m
 
@@ -283,7 +288,7 @@ class Stage(BaseStep):
         nib.save(maskimg, self.wmmask)
 
         LOGGER.info(self.code + ': white matter mask done! ')
-        
+
 
     def make_wmhmask(self, t1, input_flair):
         """
