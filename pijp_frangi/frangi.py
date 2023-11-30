@@ -59,13 +59,14 @@ class BaseStep(Step):
         self.mrifolder = os.path.join(self.data, self.code,'mri')
         self.statsfolder = os.path.join(self.data, self.code,'stats')
 
-        # all nii converted
+        # all nii
         self.t1 = os.path.join(self.working_dir, self.code + "-T1.nii.gz")
         self.allmask = os.path.join(self.working_dir, self.code + "-allmask.nii.gz")
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
         self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_m' + self.code + '_FLAIRbcreg.nii')
+
 
         # If you need to get time point, site id, subject number, or other meta data
         # that is stored in the series code, use this object.
@@ -242,8 +243,10 @@ class Stage(BaseStep):
         self.mgz_convert(t1mgz, self.t1)
         self.aseg_convert(asegstats)
         self.make_allmask(maskmgz)
+        self.make_whitemask(wmparcmgz)
         self.make_wmhmask(self.t1, flair_raw)
 
+    ####---some basic processing functions---#####
     def aseg_convert(self, aseg_raw):
         cmd = f'asegstats2table -i {aseg_raw} -d comma -t {self.asegstats}'
         self.commands.fs(cmd)
@@ -254,6 +257,29 @@ class Stage(BaseStep):
         self.commands.fs(cmd)
         LOGGER.debug(f"converted output:{nii}")
         LOGGER.info(self.code + ': mgz_convert done! ')
+
+    def register(self,input,ref,output):
+        cmd = f'flirt -in {input} -ref {ref} -out {output}'
+        self.commands.fsl(cmd)
+    
+    def N4Bias(self,input,output):
+        cmd = f'N4BiasFieldCorrection -i {input} -o {output}'
+        self.commands.ants(cmd)
+
+    def NLMDenoise(self,input,output,p,s):
+        """Args: input, patch size, search radius, output"""
+        cmd = f'DenoiseImage -i {input} -p {p} -r {s} -o {output}'
+        self.commands.ants(cmd)
+
+    
+    # ####----doing things functions---####
+    # def process_raw(self,rawt1,processedt1,t1):
+    #     # for now, assume registration to the relevant t1
+    #     rawt1 = os.path.join(get_project_dir(self.project),)
+
+
+        
+
 
     def make_allmask(self, maskmgz):
         img = nib.load(maskmgz)
@@ -325,7 +351,7 @@ try
     addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
     addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
     spm_jobman('initcfg');
-    ps_LST_lpa('{unzipped_flair}');
+    ps_LST_lga('{t1}','{unzipped_flair}');
 catch ME
     report = ME.getReport;
     fprintf(2, report);
@@ -416,7 +442,7 @@ class Analyze(Stage):
     def run(self):
 
         frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-        self.frangi_analysis(self.t1, self.allmask, 0.0025, frangimask_all, wmhmask = self.wmhmask)
+        self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.wmhmask)
 
         self.icv_calc(self.asegstats)
         count_all, vol_all, icv_all = self.pvs_stats(frangimask_all)
