@@ -392,8 +392,8 @@ class Analyze(Stage):
     process_name = PROCESS_TITLE
     step_name = 'Analyze'
     step_cli = 'analyze'
-    cpu = 4
-    mem = '4G'
+    cpu = 2
+    mem = '8G'
 
     def __init__(self, project, code, args=None):
         super().__init__(project, code, args)
