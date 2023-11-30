@@ -65,7 +65,7 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_m' + self.code + '_FLAIR.nii')
+        self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_m' + self.code + '_FLAIRbcreg.nii')
 
         # If you need to get time point, site id, subject number, or other meta data
         # that is stored in the series code, use this object.
@@ -204,7 +204,7 @@ class Stage(BaseStep):
 
     def __init__(self, project, code, args):
         super(Stage, self).__init__(project, code, args)
-        self.next_step = None
+        self.next_step = Analyze
         self.commands = Commands(project, code, args)
 
     def run(self):
@@ -294,8 +294,8 @@ class Stage(BaseStep):
         # TODO: this needs to be fixed
         ## currently using LPA
         # first unzip the files
-        unzipped_flair = os.path.join(wmhlesion_folder, self.code + '_FLAIR.nii')
-        with gzip.open(input_flair, 'rb') as f_in:
+        unzipped_flair = os.path.join(wmhlesion_folder, self.code + '_FLAIRbcreg.nii')
+        with gzip.open(flair_reg, 'rb') as f_in:
             with open(unzipped_flair, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
@@ -319,7 +319,7 @@ exit;"""
         # Orig file path.
         #wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
         # One that was generated.
-        wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_m' + self.code + '_FLAIR.nii')
+        wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_m' + self.code + '_FLAIRbcreg.nii')
         shutil.copy(wmhmask, self.working_dir)
 
         LOGGER.info(self.code + ': wmhmasks done!')
