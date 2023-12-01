@@ -67,6 +67,8 @@ class BaseStep(Step):
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
         self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_m' + self.code + '_FLAIRbcreg.nii')
 
+        self.t1raw = os.path.join(self.working_dir, self.code + "-T1raw.nii.gz")
+
 
         # If you need to get time point, site id, subject number, or other meta data
         # that is stored in the series code, use this object.
@@ -238,6 +240,11 @@ class Stage(BaseStep):
         flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
         if not os.path.exists(flair_raw):
             raise ProcessingError("FLAIR nifti is missing from `Raw`")
+        
+        proj_root = get_project_dir(self.project)
+        t1_raw = os.path.join(proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
+        if not os.path.exists(t1_raw):
+            raise ProcessingError("T1 nifti is missing from `Raw`")
 
 
         self.mgz_convert(t1mgz, self.t1)
@@ -245,6 +252,8 @@ class Stage(BaseStep):
         self.make_allmask(maskmgz)
         self.make_whitemask(wmparcmgz)
         self.make_wmhmask(self.t1, flair_raw)
+
+        # self.process_raw(t1_raw,self.t1,1,2)
 
     ####---some basic processing functions---#####
     def aseg_convert(self, aseg_raw):
@@ -273,13 +282,21 @@ class Stage(BaseStep):
 
     
     # ####----doing things functions---####
-    # def process_raw(self,rawt1,processedt1,t1):
-    #     # for now, assume registration to the relevant t1
-    #     rawt1 = os.path.join(get_project_dir(self.project),)
+    def process_raw(self,rawt1,t1,p,s):
+        # for now, assume registration to the relevant t1
+        #shutil.copy(rawt1, self.working_dir)
+        raw_reg = os.path.join(self.working_dir,self.code+'_T1raw_reg.nii.gz')
+        reg_cmd = f'flirt -in {rawt1} -ref {t1} -out {raw_reg}'
+        self.commands.fsl(reg_cmd)
 
+        raw_bc = os.path.join(self.working_dir,self.code+'_T1raw_regbc.nii.gz')
+        bc_cmd = f'N4BiasFieldCorrection -i {raw_reg} -o {raw_bc}'
+        self.commands.ants(bc_cmd)
+
+        dn_cmd = f'DenoiseImage -i {raw_bc} -p {p} -r {s} -o {self.t1raw}'
+        self.commands.ants(dn_cmd)
 
         
-
 
     def make_allmask(self, maskmgz):
         img = nib.load(maskmgz)
