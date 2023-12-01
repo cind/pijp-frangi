@@ -368,12 +368,17 @@ class Stage(BaseStep):
             with open(unzipped_flair, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
+        unzipped_t1 = os.path.join(wmhlesion_folder, self.code + '_T1.nii')
+        with gzip.open(t1, 'rb') as f_in:
+            with open(unzipped_t1, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+
         wmh_cmd = f"""
 try
     addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
     addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
     spm_jobman('initcfg');
-    ps_LST_lga('{unzipped_flair}','{t1}');
+    ps_LST_lga('{unzipped_flair}','{unzipped_t1}');
 catch ME
     report = ME.getReport;
     fprintf(2, report);
