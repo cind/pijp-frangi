@@ -65,7 +65,7 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, 'ples_lpa_m' + self.code + '_FLAIRbcreg.nii')
+        self.wmhmask = os.path.join(self.working_dir, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
 
         self.t1raw = os.path.join(self.working_dir, self.code + "-T1raw.nii.gz")
 
@@ -378,7 +378,7 @@ try
     addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
     addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
     spm_jobman('initcfg');
-    ps_LST_lga('{unzipped_flair}','{unzipped_t1}');
+    ps_LST_lga('{unzipped_t1}','{unzipped_flair}');
 catch ME
     report = ME.getReport;
     fprintf(2, report);
@@ -393,7 +393,7 @@ exit;"""
         # Orig file path.
         #wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
         # One that was generated.
-        wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_m' + self.code + '_FLAIRbcreg.nii')
+        wmhmask = os.path.join(wmhlesion_folder, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
         shutil.copy(wmhmask, self.working_dir)
 
         LOGGER.info(self.code + ': wmhmasks done!')
@@ -469,7 +469,7 @@ class Analyze(Stage):
     def run(self):
 
         frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-        self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.wmhmask)
+        self.frangi_analysis(self.t1, self.allmask, 0.00025, frangimask_all, wmhmask = self.wmhmask)
 
         self.icv_calc(self.asegstats)
         count_all, vol_all, icv_all = self.pvs_stats(frangimask_all)
