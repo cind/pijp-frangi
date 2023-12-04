@@ -69,7 +69,8 @@ class BaseStep(Step):
 
         self.t1raw = os.path.join(self.working_dir, self.code + "-T1raw.nii.gz")
         self.greymask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
-        self.wmhmask2 = os.path.join(self.working_dir, self.code + 'wmhmask2.nii')
+        self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask2.nii')
+        self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii')
 
 
 
@@ -256,6 +257,7 @@ class Stage(BaseStep):
         self.make_greymask(maskmgz)
         self.make_allmask()
         self.make_wmhmask(self.t1, flair_raw)
+        self.make_wmhmask2()
 
         # self.process_raw(t1_raw,self.t1,1,2)
 
@@ -345,8 +347,15 @@ class Stage(BaseStep):
         LOGGER.info(self.code + ': white matter mask done! ')
 
     def make_allmask(self):
-        cmd = f'MaskUnion --left {self.wmmask} --right {self.greymask} --output {self.allmask}'
-        self.commands.qit(cmd)
+        cmd_union = f'MaskUnion --left {self.wmmask} --right {self.greymask} --output {self.allmask}'
+        self.commands.qit(cmd_union)
+
+        cmd_binarize = f'MaskBinarize --input {self.allmask} --output {self.allmask}'
+        self.commands.qit(cmd_binarize)
+
+
+        LOGGER.info(self.code + ': all mask done! ')
+
         
 
     def make_wmhmask(self, t1, input_flair):
@@ -371,8 +380,6 @@ class Stage(BaseStep):
         register = f'flirt -in {flair_bc} -ref {t1} -out {flair_reg}'
         self.commands.fsl(register)
 
-        # TODO: this needs to be fixed
-        ## currently using LPA
         # first unzip the files
         unzipped_flair = os.path.join(wmhlesion_folder, self.code + '_FLAIRbcreg.nii')
         with gzip.open(flair_reg, 'rb') as f_in:
@@ -401,9 +408,6 @@ exit;"""
         LOGGER.debug(f"MATLAB m file:{matlab_script}")
         self.commands.matlab(matlab_script)
 
-        # Orig file path.
-        #wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIR.nii')
-        # One that was generated.
         wmhmask = os.path.join(wmhlesion_folder, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
         shutil.copy(wmhmask, self.working_dir)
 
@@ -413,23 +417,24 @@ exit;"""
         LOGGER.info(self.code + ': wmhmasks done!')
     
     def make_wmhmask2(self):
+        """Secondary WMH mask that is only based on an intensity threshold. Adds to the existing LST produced WMH mask. Currently testing: 12/4/23"""
+
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
-        flair_bc = os.path.join(self.working_dir, wmhlesion_folder, self.code + "_FLAIRbc.nii.gz")
+        flair_bcreg = os.path.join(self.working_dir, wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
         flair_stats = os.path.join(self.working_dir, self.code + '-flairstats.csv')
-        cmd_measure = f'VolumeMeasure --input {flair_bc} --output {flair_stats}'
+        cmd_measure = f'VolumeMeasure --input {flair_bcreg} --output {flair_stats}'
         self.commands.qit(cmd_measure)
 
         flair_csv = pd.read_csv(flair_stats, index_col=0)
         max_perc = flair_csv.loc['max'][0] * 0.7
 
-        cmd_threshold = f'VolumeThreshold --input {flair_bc} --mask {self.allmask} --threshold {max_perc} --output {self.wmhmask2}'
+        cmd_threshold = f'VolumeThreshold --input {flair_bcreg} --mask {self.allmask} --threshold {max_perc} --magnitude --output {self.wmhmask2}'
         self.commands.qit(cmd_threshold)
 
-        #optional: not yet implemented as a self.xxx variable
-        total_wmhmask = os.path.join(self.working_dir,self.code+'_wmhmask_total.nii.gz')
-        cmd_totalwmhmask = f'MaskUnion --left {self.wmhmask} --right {self.wmhmask2} --output {total_wmhmask}'
+        #optional
+        # currently implementing this: 12/4/23
+        cmd_totalwmhmask = f'MaskUnion --left {self.wmhmask} --right {self.wmhmask2} --output {self.total_wmhmask}'
         self.commands.qit(cmd_totalwmhmask)
-
 
 
 
@@ -504,13 +509,13 @@ class Analyze(Stage):
     def run(self):
 
         frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-        self.frangi_analysis(self.t1, self.allmask, 0.00025, frangimask_all, wmhmask = self.wmhmask)
+        self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.total_wmhmask)
 
         self.icv_calc(self.asegstats)
         count_all, vol_all, icv_all = self.pvs_stats(frangimask_all)
 
         frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
-        self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
+        self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.total_wmhmask)
 
         self.pvs_stats(frangimask_wm)
         count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm)
