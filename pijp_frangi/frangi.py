@@ -68,6 +68,9 @@ class BaseStep(Step):
         self.wmhmask = os.path.join(self.working_dir, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
 
         self.t1raw = os.path.join(self.working_dir, self.code + "-T1raw.nii.gz")
+        self.greymask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
+        self.wmhmask2 = os.path.join(self.working_dir, self.code + 'wmhmask2.nii')
+
 
 
         # If you need to get time point, site id, subject number, or other meta data
@@ -249,8 +252,9 @@ class Stage(BaseStep):
 
         self.mgz_convert(t1mgz, self.t1)
         self.aseg_convert(asegstats)
-        self.make_allmask(maskmgz)
         self.make_whitemask(wmparcmgz)
+        self.make_greymask(maskmgz)
+        self.make_allmask()
         self.make_wmhmask(self.t1, flair_raw)
 
         # self.process_raw(t1_raw,self.t1,1,2)
@@ -295,16 +299,16 @@ class Stage(BaseStep):
 
         dn_cmd = f'DenoiseImage -i {raw_bc} -p {p} -r {s} -o {self.t1raw}'
         self.commands.ants(dn_cmd)
-
         
 
-    def make_allmask(self, maskmgz):
+    def make_greymask(self, maskmgz):
         img = nib.load(maskmgz)
         data = img.get_fdata()
         mask = np.zeros(np.shape(data))
 
-        seg = [2, 10, 11, 12, 13, 26, 41, 49, 50, 51, 52, 58]
+        seg = [10, 11, 12, 13, 26, 49, 50, 51, 52, 58]
         wmh = 77
+        wm = [2,41] # took these out 12/4/23
         # Do we need this if it should already not be included in the others?
         # or is it included? or maybe it doesn't matter since She wants me to
         # use SPM anyway
@@ -313,9 +317,9 @@ class Stage(BaseStep):
             mask[data == m] = m
 
         maskimg = nib.Nifti1Image(mask, img.affine)
-        nib.save(maskimg, self.allmask)
+        nib.save(maskimg, self.greymask)
 
-        LOGGER.info(self.code + ': makeall masks done! ')
+        LOGGER.info(self.code + ': make grey mask done! ')
 
     def make_whitemask(self, wmparcmgz):
         img = nib.load(wmparcmgz)
@@ -334,9 +338,15 @@ class Stage(BaseStep):
         cmd_threshold = f'VolumeThreshold --input {wmmask_vol} --threshold {0.5} --output {self.wmmask}'
         self.commands.qit(cmd_threshold)
 
+        cmd_close = f'MaskClose --input {self.wmmask} --num {1} --element {"cross"} --output {self.wmmask}'
+        self.commands.qit(cmd_close)
 
         LOGGER.info(self.code + ': white matter mask done! ')
 
+    def make_allmask(self):
+        cmd = f'MaskUnion --left {self.wmmask} --right {self.greymask} --output {self.allmask}'
+        self.commands.qit(cmd)
+        
 
     def make_wmhmask(self, t1, input_flair):
         """
@@ -396,7 +406,31 @@ exit;"""
         wmhmask = os.path.join(wmhlesion_folder, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
         shutil.copy(wmhmask, self.working_dir)
 
+        cmd_dilate = f'MaskDilate --input {self.wmhmask} --num {1} --element {"cross"} --output {self.wmhmask}'
+        self.commands.qit(cmd_dilate)
+
         LOGGER.info(self.code + ': wmhmasks done!')
+    
+    def make_wmhmask2(self):
+        wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
+        flair_bc = os.path.join(self.working_dir, wmhlesion_folder, self.code + "_FLAIRbc.nii.gz")
+        flair_stats = os.path.join(self.working_dir, self.code + '-flairstats.csv')
+        cmd_measure = f'VolumeMeasure --input {flair_bc} --output {flair_stats}'
+        self.commands.qit(cmd_measure)
+
+        flair_csv = pd.read_csv(flair_stats, index_col=0)
+        max_perc = flair_csv.loc['max'][0] * 0.7
+
+        cmd_threshold = f'VolumeThreshold --input {flair_bc} --mask {self.allmask} --threshold {max_perc} --output {self.wmhmask2}'
+        self.commands.qit(cmd_threshold)
+
+        #optional: not yet implemented as a self.xxx variable
+        total_wmhmask = os.path.join(self.working_dir,self.code+'_wmhmask_total.nii.gz')
+        cmd_totalwmhmask = f'MaskUnion --left {self.wmhmask} --right {self.wmhmask2} --output {total_wmhmask}'
+        self.commands.qit(cmd_totalwmhmask)
+
+
+
 
     def _parse_args(self, args):
         """
