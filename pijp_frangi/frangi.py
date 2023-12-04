@@ -422,7 +422,7 @@ exit;"""
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         flair_bcreg = os.path.join(self.working_dir, wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
         flair_stats = os.path.join(self.working_dir, self.code + '-flairstats.csv')
-        cmd_measure = f'VolumeMeasure --input {flair_bcreg} --output {flair_stats}'
+        cmd_measure = f'VolumeMeasure --input {flair_bcreg} --mask {self.allmask}  --output {flair_stats}'
         self.commands.qit(cmd_measure)
 
         flair_csv = pd.read_csv(flair_stats, index_col=0)
