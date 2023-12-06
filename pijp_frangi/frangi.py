@@ -161,8 +161,9 @@ class Commands(BaseStep):
 
     def qit(self, func):
         cmd = 'export JAVA_HOME=/opt/qit/jdk-12.0.2 \n'
-        cmd+= 'export PATH=$JAVA_HOME/bin:$PATH \n'
-        cmd+= f'qit {func}'
+        cmd += 'export PATH=$JAVA_HOME/bin:$PATH \n'
+        cmd += 'export _JAVA_OPTIONS="-Xmx4G -XX:ActiveProcessorCount=1"'
+        cmd += f'qit {func}'
         self._run_cmd(cmd, script_name='qit_func')     # do i need self in these?
         # script_name='qitfunc'
 
