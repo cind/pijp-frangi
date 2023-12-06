@@ -211,8 +211,8 @@ class Stage(BaseStep):
     process_name = PROCESS_TITLE
     step_name = 'Stage'
     step_cli = 'stage'
-    cpu = 1
-    mem = '8G'
+    cpu = 2
+    mem = '16G'
 
     def __init__(self, project, code, args):
         super(Stage, self).__init__(project, code, args)
@@ -244,7 +244,7 @@ class Stage(BaseStep):
         flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
         if not os.path.exists(flair_raw):
             raise ProcessingError("FLAIR nifti is missing from `Raw`")
-        
+
         proj_root = get_project_dir(self.project)
         t1_raw = os.path.join(proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
         if not os.path.exists(t1_raw):
@@ -276,7 +276,7 @@ class Stage(BaseStep):
     def register(self,input,ref,output):
         cmd = f'flirt -in {input} -ref {ref} -out {output}'
         self.commands.fsl(cmd)
-    
+
     def N4Bias(self,input,output):
         cmd = f'N4BiasFieldCorrection -i {input} -o {output}'
         self.commands.ants(cmd)
@@ -286,7 +286,7 @@ class Stage(BaseStep):
         cmd = f'DenoiseImage -i {input} -p {p} -r {s} -o {output}'
         self.commands.ants(cmd)
 
-    
+
     # ####----doing things functions---####
     def process_raw(self,rawt1,t1,p,s):
         # for now, assume registration to the relevant t1
@@ -301,7 +301,7 @@ class Stage(BaseStep):
 
         dn_cmd = f'DenoiseImage -i {raw_bc} -p {p} -r {s} -o {self.t1raw}'
         self.commands.ants(dn_cmd)
-        
+
 
     def make_greymask(self, maskmgz):
         img = nib.load(maskmgz)
@@ -356,7 +356,7 @@ class Stage(BaseStep):
 
         LOGGER.info(self.code + ': all mask done! ')
 
-        
+
 
     def make_wmhmask(self, t1, input_flair):
         """
@@ -415,7 +415,7 @@ exit;"""
         self.commands.qit(cmd_dilate)
 
         LOGGER.info(self.code + ': wmhmasks done!')
-    
+
     def make_wmhmask2(self):
         """Secondary WMH mask that is only based on an intensity threshold. Adds to the existing LST produced WMH mask. Currently testing: 12/4/23"""
 
