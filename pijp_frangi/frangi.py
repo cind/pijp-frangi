@@ -65,11 +65,11 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
+        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii')
 
         self.t1raw = os.path.join(self.working_dir, self.code + "-T1raw.nii.gz")
         self.greymask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
-        self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask2.nii')
+        self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask_thresh.nii')
         self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii')
 
 
@@ -411,8 +411,9 @@ exit;"""
 
         wmhmask = os.path.join(wmhlesion_folder, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
         shutil.copy(wmhmask, self.working_dir)
+        wmhmask_wdfold = os.path.join(self.working_dir, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
 
-        cmd_dilate = f'MaskDilate --input {self.wmhmask} --num {1} --element {"cross"} --output {self.wmhmask}'
+        cmd_dilate = f'MaskDilate --input {wmhmask_wdfold} --num {1} --element {"cross"} --output {self.wmhmask}'
         self.commands.qit(cmd_dilate)
 
         LOGGER.info(self.code + ': wmhmasks done!')
@@ -503,9 +504,11 @@ class Analyze(Stage):
         self.countwm = -1
         self.volwm = -1
         self.icv_normedwm = -1
-
+        
         self.pvsstats = os.path.join(self.working_dir, self.code + '-pvsstats.csv')
         self.comp = os.path.join(self.working_dir, self.code + '-frangi_comp.nii.gz')
+        self.pvsstats_wm = os.path.join(self.working_dir, self.code + '-pvsstats-wm.csv')
+        self.comp_wm = os.path.join(self.working_dir, self.code + '-frangi_comp-wm.nii.gz')
 
     def run(self):
 
@@ -513,13 +516,13 @@ class Analyze(Stage):
         self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.total_wmhmask)
 
         self.icv_calc(self.asegstats)
-        count_all, vol_all, icv_all = self.pvs_stats(frangimask_all)
+        count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
         frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
         self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.total_wmhmask)
 
         self.pvs_stats(frangimask_wm)
-        count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm)
+        count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
         subject = self.code
         researchgroup = self.researchgroup
@@ -560,6 +563,15 @@ class Analyze(Stage):
         else:
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
             self.commands.qit(cmd_threshold)
+            LOGGER.info(self.code + ': WMH did not exist, skipped WMH subtraction in Frangi analysis')
+
+        # new addition: remove any gigantic blobs that probably are not PVS
+        unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs.nii.gz')
+        cmd_compblob = f'MaskComponents --input {output} --minvoxels {500} --output {unwantedblobs}'
+        self.commands.qit(cmd_compblob)
+        cmd_removeblob = f'MaskSet --input {output} --mask {unwantedblobs} --label {0} --output {output}'
+        self.commands.qit(cmd_removeblob)
+
 
         LOGGER.info(self.code + ': frangi analysis done! ')
 
@@ -570,12 +582,12 @@ class Analyze(Stage):
         LOGGER.info(self.code + ': icv calc done! ')
 
 
-    def pvs_stats(self, frangimask):
+    def pvs_stats(self, frangimask,compname,statsname):
         """ Calculates pvs stats. Fills in variables count and vol, returns stats table as calculated by MaskMeasure. """
-        cmd_comp = f'MaskComponents --input {frangimask} --output {self.comp}'
+        cmd_comp = f'MaskComponents --input {frangimask} --output {compname}'
         self.commands.qit(cmd_comp)
 
-        cmd_maskmeas = f'MaskMeasure --input {self.comp} --comps --counts --output {self.pvsstats}'
+        cmd_maskmeas = f'MaskMeasure --input {self.comp} --comps --counts --output {statsname}'
         self.commands.qit(cmd_maskmeas)
 
         stats = pd.read_csv(self.pvsstats, index_col=0)
