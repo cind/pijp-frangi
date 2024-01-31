@@ -516,12 +516,12 @@ class Analyze(Stage):
         self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.total_wmhmask)
 
         self.icv_calc(self.asegstats)
+        
         count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
         frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
         self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.total_wmhmask)
 
-        self.pvs_stats(frangimask_wm)
         count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
         subject = self.code
