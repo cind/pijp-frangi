@@ -2,8 +2,7 @@
 
 This pipeline recreates a process from the paper, {Multiscale Vessel Enhancement Filtering}.
 
-Current processing pipeline:
-
+## Current processing pipeline (for FS-processed images):
 Stage:
 - convert the T1 images to nii
 - convert aseg.stats to csv
@@ -28,6 +27,8 @@ Analyze:
 - put all PVS stats into a csv for each subject, stored in subject folder
 - put subject info into grand report 
 
+
+## Current processing pipeline (for FS-processed images):
 
 
 
