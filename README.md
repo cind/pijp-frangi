@@ -25,7 +25,8 @@ Analyze:
 - calculate with aseg.stats
 - run frangi filter with just white matter mask and default parameters (threshold is the same as above), removing WMH with WMH mask if it exists
 - calculate the mask components (using connected components analysis) then measure how many components there are and how large the components are (gets volume and count)
-- put everything into excel sheet 
+- put all PVS stats into a csv for each subject, stored in subject folder
+- put subject info into grand report 
 
 
 

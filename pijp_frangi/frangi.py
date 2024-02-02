@@ -50,6 +50,7 @@ class BaseStep(Step):
         self.datetime = datetime.datetime.now().strftime('%Y-%m-%d-%H%M%s')
         #  ADNI3_frangi gets its FS data from ADNI3_FSdn (Denoise).
         self.data = os.path.join(get_project_dir('ADNI3_FSdn'),'Freesurfer','subjects')
+        self.proj_root = get_project_dir(self.project)
         self.project = project
         self.code = code
         self.researchgroup = repo.Repository(self.project).get_researchgroup(self.code)[0]['ResearchGroup']
@@ -241,13 +242,11 @@ class Stage(BaseStep):
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
 
 
-        proj_root = get_project_dir(self.project)
-        flair_raw = os.path.join(proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
+        flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
         if not os.path.exists(flair_raw):
             raise ProcessingError("FLAIR nifti is missing from `Raw`")
 
-        proj_root = get_project_dir(self.project)
-        t1_raw = os.path.join(proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
+        t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
         if not os.path.exists(t1_raw):
             raise ProcessingError("T1 nifti is missing from `Raw`")
 
@@ -516,7 +515,7 @@ class Analyze(Stage):
         self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.total_wmhmask)
 
         self.icv_calc(self.asegstats)
-        
+
         count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
         frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
@@ -528,8 +527,31 @@ class Analyze(Stage):
         researchgroup = self.researchgroup
 
         col = ['subjects','research group','pvscount','pvsvol','icv norm','pvscountwm','pvsvolwm','icv norm wm']
-        df = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm]],columns=col)
-        df.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=True)
+
+        # for grand PVS report
+        df_empty = pd.DataFrame(columns=col)
+        datatable = os.path.join(self.proj_root,'grand_PVS_report.csv')
+
+        if os.path.exists(datatable):
+            df_data = pd.read_csv(datatable)
+            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm]],columns=col)
+            df_data = df_data._append(newsubject)
+        else:
+            df_empty.to_csv(datatable,index=False)
+            
+            df_data = pd.read_csv(datatable)
+            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm]],columns=col)
+            df_data = df_data._append(newsubject)
+
+        df_cleaned = df_data
+        df_cleaned.drop_duplicates(subset='subjects',keep='last',inplace=True)
+        df_cleaned.to_csv(datatable)
+
+        # for individual report
+        newsubject.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=True)
+
+
+
 
     def frangi_analysis(self, t1, mask, threshold, output, region='all',wmhmask=None):
 
