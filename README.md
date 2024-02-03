@@ -11,7 +11,7 @@ Stage:
     - mask is put together then closed (radius 1, cross shape)
 - make a grey matter mask
     - segmentations are taken from aparc+aseg.mgz, put together like white matter mask (but not closed)
-- option for WMH mask, currently using v.2
+- option for WMH mask, currently using v.1 (v.2 has issues with mask union sometimes / sampling ? 2/2/24)
     - v.1: register FLAIR to T1 and bias correct (Sepehrband et al 2021)
     - v.1: LST algorithm finds all the WMH
     - v.1: Mask is then dilated by 1 with cross shape

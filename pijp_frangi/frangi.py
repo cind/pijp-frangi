@@ -312,7 +312,8 @@ class Stage(BaseStep):
         bc_cmd = f'N4BiasFieldCorrection -i {raw_reg} -o {raw_bc}'
         self.commands.ants(bc_cmd)
 
-        dn_cmd = f'DenoiseImage -i {raw_bc} -n {'Rician'} -p {p} -r {s} -o {self.t1raw}'
+        noise = 'Rician'
+        dn_cmd = f'DenoiseImage -i {raw_bc} -n {noise} -p {p} -r {s} -o {self.t1raw}'
         self.commands.ants(dn_cmd)
 
         LOGGER.info(self.code + ': raw T1 processed! ')
