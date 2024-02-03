@@ -256,7 +256,7 @@ class Stage(BaseStep):
 
         if os.path.exists(flair_raw):
             self.make_wmhmask(self.t1, flair_raw)
-            self.make_wmhmask2()
+            #self.make_wmhmask2()   causing problems
         if not os.path.exists(flair_raw):
             file1 = open(faulty_subject_list,'a')
             file1.write(self.code + ': missing raw flair \n')
@@ -531,11 +531,11 @@ class Analyze(Stage):
 
         if os.path.exists(self.total_wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.total_wmhmask)
+            self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.total_wmhmask)
+            self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
             
             raw = 'no'
@@ -571,21 +571,21 @@ class Analyze(Stage):
         # clean any duplicates
         df_cleaned = df_data
         df_cleaned.drop_duplicates(subset='subjects',keep='last',inplace=True)
-        df_cleaned.to_csv(datatable)
+        df_cleaned.to_csv(datatable,index=False)
 
         # for individual report
-        newsubject.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=True)
+        newsubject.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=False)
 
         
 
         # for raw processing:
         if os.path.exists(self.t1raw) & os.path.exists(self.total_wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_RAW.nii.gz")
-            self.frangi_analysis(self.t1raw, self.allmask, 0.0004, frangimask_all, wmhmask = self.total_wmhmask)
+            self.frangi_analysis(self.t1raw, self.allmask, 0.0004, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_RAW.nii.gz")
-            self.frangi_analysis(self.t1raw, self.wmmask, 0.0004, frangimask_wm, region = 'wm',wmhmask = self.total_wmhmask)
+            self.frangi_analysis(self.t1raw, self.wmmask, 0.0004, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
             raw = 'yes'
