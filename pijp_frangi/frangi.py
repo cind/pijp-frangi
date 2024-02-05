@@ -530,7 +530,7 @@ class Analyze(Stage):
         researchgroup = self.researchgroup
         self.icv_calc(self.asegstats)
 
-        if os.path.exists(self.total_wmhmask):
+        if os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
@@ -580,11 +580,11 @@ class Analyze(Stage):
         
 
         # for raw processing:
-        if os.path.exists(self.t1raw) & os.path.exists(self.total_wmhmask):
+        if os.path.exists(self.t1raw) & os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_RAW.nii.gz")
             self.frangi_analysis(self.t1raw, self.allmask, 0.0004, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
-
+            
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_RAW.nii.gz")
             self.frangi_analysis(self.t1raw, self.wmmask, 0.0004, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
