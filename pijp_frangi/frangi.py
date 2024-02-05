@@ -247,6 +247,8 @@ class Stage(BaseStep):
             
         t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
         
+        #testing queue method
+        get_queue(self.project)
 
         self.mgz_convert(t1mgz, self.t1)
         self.aseg_convert(asegstats)
@@ -304,6 +306,8 @@ class Stage(BaseStep):
     def process_raw(self,rawt1,t1,p,s):
         # for now, assume registration to the relevant t1
         #shutil.copy(rawt1, self.working_dir)
+
+        # need to figure out how to print the 
         raw_reg = os.path.join(self.working_dir,self.code+'_T1raw_reg.nii.gz')
         reg_cmd = f'flirt -in {rawt1} -ref {t1} -out {raw_reg}'
         self.commands.fsl(reg_cmd)
@@ -486,13 +490,18 @@ exit;"""
         """
         # Use use the database VIEW `ImageList.<project>` to get the SeriesCodes for the `Step` we need.
         all_codes = ProcessingLog().get_project_images(project_name, image_type='T1')
+        LOGGER.info('from queue method: all_codes = ' + all_codes)
 
         # We typically want to exclude codes we've already run or attempted.
         attempted_rows = ProcessingLog().get_step_attempted(project_name, PROCESS_TITLE, 'stage')
+        LOGGER.info('from queue method: attempted_rows = ' + attempted_rows)
+
         attempted = [row[1] for row in attempted_rows]
+        LOGGER.info('from queue method: attempted = ' + attempted)
 
         # Create a final list
         todo = [{'ProjectName': project_name, "Code": row['Code']} for row in all_codes if row['Code'] not in attempted]
+        LOGGER.info('from queue method: todo = ' + todo)
 
         return todo
 
@@ -584,7 +593,7 @@ class Analyze(Stage):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_RAW.nii.gz")
             self.frangi_analysis(self.t1raw, self.allmask, 0.0004, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
-            
+
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_RAW.nii.gz")
             self.frangi_analysis(self.t1raw, self.wmmask, 0.0004, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
@@ -628,7 +637,7 @@ class Analyze(Stage):
             
 
 
-    def frangi_analysis(self, t1, mask, threshold, output, region='all',wmhmask=None):
+    def frangi_analysis(self, t1, mask, threshold, output, region='all', wmhmask=None, imagetype='T1'):
 
         # hessian calculation
         hes =  os.path.join(self.working_dir, self.code + '-hessian-' + region + '.nii.gz')
@@ -646,7 +655,12 @@ class Analyze(Stage):
 
         # frangi calculation
         frangi_mask = os.path.join(self.working_dir, self.code +'-frangimask' + region + '.nii.gz')
-        cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
+        if imagetype == 'T1':
+            cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
+        elif imagetype == 'T2':
+            cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --output {frangi_mask}'
+        else:
+            LOGGER.info(self.code + ': oops, you did not input a valid image type')
         self.commands.qit(cmd_frangi)
 
         if wmhmask is not None:
@@ -660,7 +674,7 @@ class Analyze(Stage):
         else:
             cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
             self.commands.qit(cmd_threshold)
-            LOGGER.info(self.code + ': WMH did not exist, skipped WMH subtraction in Frangi analysis')
+            LOGGER.info(self.code + ': oh no! WMH did not exist, skipped WMH subtraction in Frangi analysis')
 
         # new addition: remove any gigantic blobs that probably are not PVS
         unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs.nii.gz')
@@ -669,8 +683,7 @@ class Analyze(Stage):
         cmd_removeblob = f'MaskSet --input {output} --mask {unwantedblobs} --label {0} --output {output}'
         self.commands.qit(cmd_removeblob)
 
-
-        LOGGER.info(self.code + ': frangi analysis done! ')
+        LOGGER.info(self.code + ': frangi analysis done! almost there :)')
 
     def icv_calc(self, asegstats):
         stat = pd.read_csv(asegstats)
@@ -684,16 +697,16 @@ class Analyze(Stage):
         cmd_comp = f'MaskComponents --input {frangimask} --output {compname}'
         self.commands.qit(cmd_comp)
 
-        cmd_maskmeas = f'MaskMeasure --input {self.comp} --comps --counts --output {statsname}'
+        cmd_maskmeas = f'MaskMeasure --input {compname} --comps --counts --output {statsname}'
         self.commands.qit(cmd_maskmeas)
 
-        stats = pd.read_csv(self.pvsstats, index_col=0)
+        stats = pd.read_csv(statsname, index_col=0)
         count =  stats.loc['component_count'][0]    # number of PVS counted
         vol = stats.loc['component_sum'][0]       # number of voxels
 
+        #just for the purposes of logging, self.xxx variables not actually used
         self.count = count
         self.vol = vol
-
         icv_normed = vol / self.icv
 
         LOGGER.info(self.code + ': pvs stats done! ')
