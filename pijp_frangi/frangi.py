@@ -248,7 +248,7 @@ class Stage(BaseStep):
         t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
         
         #testing queue method
-        get_queue(self.project)
+        #get_queue(self.project)
 
         self.mgz_convert(t1mgz, self.t1)
         self.aseg_convert(asegstats)
@@ -491,21 +491,21 @@ exit;"""
         # Use use the database VIEW `ImageList.<project>` to get the SeriesCodes for the `Step` we need.
         all_codes = ProcessingLog().get_project_images(project_name, image_type='T1')
         #LOGGER.info('from queue method: all_codes = ' + all_codes)
-        print(all_codes)
+        #print(all_codes)
 
         # We typically want to exclude codes we've already run or attempted.
         attempted_rows = ProcessingLog().get_step_attempted(project_name, PROCESS_TITLE, 'stage')
         #LOGGER.info('from queue method: attempted_rows = ' + attempted_rows)
-        print(attempted_rows)
+        #print(attempted_rows)
 
         attempted = [row[1] for row in attempted_rows]
         #LOGGER.info('from queue method: attempted = ' + attempted)
-        print(attempted)
+        #print(attempted)
 
         # Create a final list
         todo = [{'ProjectName': project_name, "Code": row['Code']} for row in all_codes if row['Code'] not in attempted]
         #LOGGER.info('from queue method: todo = ' + todo)
-        print(todo)
+        #print(todo)
 
         return todo
 

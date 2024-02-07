@@ -10,5 +10,8 @@ from scipy import stats
 
 
 # import csv
+
+
+
 # create new pd with only AD, MCI, CN
 # recreate bar plot for regions
