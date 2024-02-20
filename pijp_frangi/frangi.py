@@ -227,12 +227,13 @@ class Stage(BaseStep):
 
         flair_check = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
         LOGGER.debug(f"FLAIR check {flair_check[0]['Code']}")
+        
         if len(rg) == 0:
             raise ProcessingError("No Research Group found.")
-
+        
+        # i actually dunno what this does bc the flairs are already being checked below
         if len(flair_check) == 0:
             raise ProcessingError("No FLAIR found.")
-
         elif len(flair_check) > 1:
             raise ProcessingError("Found more than 1 FLAIR.")
 
@@ -250,7 +251,15 @@ class Stage(BaseStep):
         #testing queue method
         #get_queue(self.project)
 
-        self.mgz_convert(t1mgz, self.t1)
+        if os.path.exists(t1mgz):
+            self.mgz_convert(t1mgz, self.t1)
+        if not os.path.exists(t1mgz):
+            file1 = open(faulty_subject_list,'a')
+            file1.write(self.code + ': missing FSdn T1 \n')
+            file1.close()
+            #raise ProcessingError("T1 nifti is missing from `Raw`")
+            LOGGER.info("T1 nifti is missing from `ADNI3_FSdn`")
+
         self.aseg_convert(asegstats)
         self.make_whitemask(wmparcmgz)
         self.make_greymask(maskmgz)
