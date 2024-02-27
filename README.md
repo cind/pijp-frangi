@@ -1,6 +1,7 @@
 # pijp-frangi
 
-This pipeline recreates a process from the paper, {Multiscale Vessel Enhancement Filtering}.
+This pipeline uses the Frangi filter ( {Multiscale Vessel Enhancement Filtering} ) and various preprocessing steps to segment perivascular spaces.
+Creator: Serena Tang
 
 ## Current processing pipeline (for FS-processed images):
 Stage:
@@ -19,8 +20,9 @@ Stage:
     - (latest recommendation is to use just v.1. If v.2, have to run both functions (v.1, v.2))
 
 Analyze:
-- run frangi filter with default recommended parameters (threshold at 0.0002 (.0004 for RAW), close to Sepehrband et al 2021), removing WMH with WMH mask if it exists
-- remove blobs that are likely too big to be PVS (needs to be checked) ***added 1/4/23***
+- run frangi filter with default recommended parameters (threshold at 0.0002 (.0004 for RAW), close to Sepehrband et al 2021), removing WMH with WMH mask if it exists ***change from 0.0002 to 0.00002 and 0.00004 2/26/24***
+- remove blobs that are likely too big to be PVS (needs to be checked) ***added 1/4/24***
+- remove anything that is 5 volume ***added 2/26/24***
 - calculate with aseg.stats
 - run frangi filter with just white matter mask and default parameters (threshold is the same as above), removing WMH with WMH mask if it exists
 - calculate the mask components (using connected components analysis) then measure how many components there are and how large the components are (gets volume and count)

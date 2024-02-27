@@ -562,11 +562,11 @@ class Analyze(Stage):
 
         if os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all, wmhmask = self.wmhmask)
+            self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
+            self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
             raw = 'no'
@@ -574,11 +574,11 @@ class Analyze(Stage):
 
         else:
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.allmask, 0.0002, frangimask_all)
+            self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm')
+            self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm')
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
             raw = 'no'
@@ -612,11 +612,11 @@ class Analyze(Stage):
         # for raw processing:
         if os.path.exists(self.t1raw) & os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_RAW.nii.gz")
-            self.frangi_analysis(self.t1raw, self.allmask, 0.0004, frangimask_all, wmhmask = self.wmhmask)
+            self.frangi_analysis(self.t1raw, self.allmask, 0.00004, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_RAW.nii.gz")
-            self.frangi_analysis(self.t1raw, self.wmmask, 0.0004, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
+            self.frangi_analysis(self.t1raw, self.wmmask, 0.00004, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
             raw = 'yes'
@@ -624,11 +624,11 @@ class Analyze(Stage):
 
         elif os.path.exists(self.t1raw):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_RAW.nii.gz")
-            self.frangi_analysis(self.t1raw, self.allmask, 0.0004, frangimask_all)
+            self.frangi_analysis(self.t1raw, self.allmask, 0.00004, frangimask_all)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_RAW.nii.gz")
-            self.frangi_analysis(self.t1raw, self.wmmask, 0.0004, frangimask_wm, region = 'wm')
+            self.frangi_analysis(self.t1raw, self.wmmask, 0.00004, frangimask_wm, region = 'wm')
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
             raw = 'yes'
@@ -703,6 +703,13 @@ class Analyze(Stage):
         self.commands.qit(cmd_compblob)
         cmd_removeblob = f'MaskSet --input {output} --mask {unwantedblobs} --label {0} --output {output}'
         self.commands.qit(cmd_removeblob)
+
+        # new addition: remove anything that is 5 vx (inspo: Schwartz et al )
+        noise = os.path.join(self.working_dir, self.code + '-1voxelnoise.nii.gz')
+        cmd_compnoise = f'MaskComponents --input {output} --mixvoxels {5} --output {noise}'
+        self.commands.qit(cmd_compnoise)
+        cmd_removenoise = f'MaskBinarize --input {noise} --output {output}'
+        self.commands.qit(cmd_removenoise)
 
         LOGGER.info(self.code + ': frangi analysis done! almost there :)')
 
