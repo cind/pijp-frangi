@@ -66,7 +66,7 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii')    
+        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii')
         self.greymask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
         self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask_thresh.nii')
         self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii')
@@ -141,7 +141,6 @@ class BaseStep(Step):
                 lines = lines[-20]
 
             self.comments = (self.comments or "") + "\n".join(lines)
-            self.outcome = 'Error'
             raise ProcessingError(f"Script Failed! {script_path}")
 
         return output
@@ -245,9 +244,9 @@ class Stage(BaseStep):
         faulty_subject_list = os.path.join(self.proj_root,'faulty_subjects.txt')
 
         flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
-            
+
         t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
-        
+
         #testing queue method
         #get_queue(self.project)
 
@@ -316,7 +315,7 @@ class Stage(BaseStep):
         # for now, assume registration to the relevant t1
         #shutil.copy(rawt1, self.working_dir)
 
-        # need to figure out how to print the 
+        # need to figure out how to print the
         raw_reg = os.path.join(self.working_dir,self.code+'_T1raw_reg.nii.gz')
         reg_cmd = f'flirt -in {rawt1} -ref {t1} -out {raw_reg}'
         self.commands.fsl(reg_cmd)
@@ -511,10 +510,19 @@ exit;"""
         #LOGGER.info('from queue method: attempted = ' + attempted)
         #print(attempted)
 
-        # Create a final list
-        todo = [{'ProjectName': project_name, "Code": row['Code']} for row in all_codes if row['Code'] not in attempted]
-        #LOGGER.info('from queue method: todo = ' + todo)
-        #print(todo)
+        #  Codes not initiated.
+        todo_codes = [row['Code'] for row in all_codes if row['Code'] not in attempted]
+
+        # Filter into bins by RG.
+        groups = ['AD', 'CN', 'EMCI', 'LMCI', 'MCI', 'SMC']
+        # Initialize counters for each group.
+        cnt_dict = { grp:0 for grp in groups }
+        todo = []
+        for code in todo_codes:
+            rg = repo.get_research_group(code)
+            if cnt_dict[rg] < 11:
+                todo.append( {'ProjectName': project_name, "Code": row['Code']} )
+                cnt_dict[rg]++
 
         return todo
 
@@ -540,7 +548,7 @@ class Analyze(Stage):
         self.countwm = -1
         self.volwm = -1
         self.icv_normedwm = -1
-        
+
         self.pvsstats = os.path.join(self.working_dir, self.code + '-pvsstats.csv')
         self.comp = os.path.join(self.working_dir, self.code + '-frangi_comp.nii.gz')
         self.pvsstats_wm = os.path.join(self.working_dir, self.code + '-pvsstats-wm.csv')
@@ -560,7 +568,7 @@ class Analyze(Stage):
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
             self.frangi_analysis(self.t1, self.wmmask, 0.0002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
-            
+
             raw = 'no'
             WMHstatus = 'yes'
 
@@ -586,11 +594,11 @@ class Analyze(Stage):
             df_data = df_data.append(newsubject)
         else:
             df_empty.to_csv(datatable,index=False)
-            
+
             df_data = pd.read_csv(datatable)
             newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, raw, WMHstatus]],columns=col)
             df_data = df_data.append(newsubject)
-        
+
         # clean any duplicates
         df_cleaned = df_data
         df_cleaned.drop_duplicates(subset='subjects',keep='last',inplace=True)
@@ -599,7 +607,7 @@ class Analyze(Stage):
         # for individual report
         newsubject.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=False)
 
-        
+
 
         # for raw processing:
         if os.path.exists(self.t1raw) & os.path.exists(self.wmhmask):
@@ -622,7 +630,7 @@ class Analyze(Stage):
             frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_RAW.nii.gz")
             self.frangi_analysis(self.t1raw, self.wmmask, 0.0004, frangimask_wm, region = 'wm')
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
-            
+
             raw = 'yes'
             WMHstatus = 'no'
 
@@ -636,7 +644,7 @@ class Analyze(Stage):
             df_data_raw = df_data_raw.append(newsubject_raw)
         else:
             df_empty_raw.to_csv(datatable_raw,index=False)
-            
+
             df_data_raw = pd.read_csv(datatable_raw)
             newsubject_raw = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, raw, WMHstatus]],columns=col)
             df_data_raw = df_data_raw.append(newsubject_raw)
@@ -647,7 +655,7 @@ class Analyze(Stage):
 
         # for individual report
         newsubject_raw.to_csv(os.path.join(self.working_dir, self.code+'_report_RAW.csv'), index=False)
-            
+
 
 
     def frangi_analysis(self, t1, mask, threshold, output, region='all', wmhmask=None, imagetype='T1'):
