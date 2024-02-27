@@ -514,7 +514,8 @@ exit;"""
         todo_codes = [row['Code'] for row in all_codes if row['Code'] not in attempted]
 
         # Filter into bins by RG.
-        groups = ['AD', 'CN', 'EMCI', 'LMCI', 'MCI', 'SMC']
+        #groups = ['AD', 'CN', 'EMCI', 'LMCI', 'MCI', 'SMC']
+        groups = ['AD']
         # Initialize counters for each group.
         cnt_dict = { grp:0 for grp in groups }
         todo = []
@@ -522,7 +523,7 @@ exit;"""
             rg = repo.get_research_group(code)
             if cnt_dict[rg] < 11:
                 todo.append( {'ProjectName': project_name, "Code": row['Code']} )
-                cnt_dict[rg]++
+                cnt_dict[rg]+=1
 
         return todo
 
