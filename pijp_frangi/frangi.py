@@ -710,13 +710,6 @@ class Analyze(Stage):
 
         LOGGER.info(self.code + ': frangi analysis done! almost there :)')
 
-    def icv_calc(self, asegstats):
-        stat = pd.read_csv(asegstats)
-        self.icv = stat['EstimatedTotalIntraCranialVol'][0]
-
-        LOGGER.info(self.code + ': icv calc done! ')
-
-
     def pvs_stats(self, frangimask,compname,statsname):
         """ Calculates pvs stats. Fills in variables count and vol, returns stats table as calculated by MaskMeasure. """
         cmd_comp = f'MaskComponents --input {frangimask} --output {compname}'
@@ -737,6 +730,35 @@ class Analyze(Stage):
         LOGGER.info(self.code + ': pvs stats done! ')
 
         return count, vol, icv_normed
+    
+#####--------functions for stats---------#########
+    def icv_calc(self, asegstats):
+        stat = pd.read_csv(asegstats)
+        self.icv = stat['EstimatedTotalIntraCranialVol'][0]
+
+        LOGGER.info(self.code + ': icv calc done! ')
+    
+    def wmh_volume(self):
+        wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
+        cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --comps --counts --output {wmh_vol}'
+        self.commands.qit(cmd_maskmeas)
+        wmhvol = stats.loc['volume'][0]
+        wmhvol_normed = wmhvol / self.icv
+
+        return wmhvol, wmhvol_normed
+    
+    def structural_volume(self):
+        gm_vol = os.path.join(self.working_dir,self.code + '-gmvol.csv')
+        cmd_maskmeas = f'MaskMeasure --input {self.gmmask} --comps --counts --output {gm_vol}'
+        self.commands.qit(cmd_maskmeas)
+        gmvol = stats.loc['volume'][0]
+        gmvol_normed = gmvol / self.icv
+
+        
+
+
+        return gmvol,gmvol_normed
+
 
 
 def run():
