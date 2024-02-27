@@ -490,7 +490,7 @@ exit;"""
         self._run_cmd(cmd, 'dcm2niix')
 
     @classmethod
-    def get_queue(cls, project_name, args):
+    def get_queue(self, cls, project_name, args):
         """
         Example how to write a `queue` mode class function that `pijp/engine` will
         call. There are many things you might do here, this is just one simple
@@ -512,8 +512,8 @@ exit;"""
         if research_groups is not None:
             todo = []
             for code in todo_codes:
-                rg = repo.get_research_group(code)
-                if options.research_group == rg:
+                #rg = repo.Repository(self.project).get_researchgroup(self.code)[0]['ResearchGroup']
+                if options.research_group == self.researchgroup:
                     todo.append( {'ProjectName': project_name, "Code": row['Code']} )
         else:
             todo = [ {'ProjectName': project_name, "Code": row['Code']} for row in todo_codes ]
