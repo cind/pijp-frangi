@@ -226,10 +226,10 @@ class Stage(BaseStep):
 
         flair_check = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
         LOGGER.debug(f"FLAIR check {flair_check[0]['Code']}")
-        
+
         if len(rg) == 0:
             raise ProcessingError("No Research Group found.")
-        
+
         # i actually dunno what this does bc the flairs are already being checked below
         if len(flair_check) == 0:
             raise ProcessingError("No FLAIR found.")
@@ -490,40 +490,33 @@ exit;"""
         self._run_cmd(cmd, 'dcm2niix')
 
     @classmethod
-    def get_queue(cls, project_name):
+    def get_queue(cls, project_name, args):
         """
         Example how to write a `queue` mode class function that `pijp/engine` will
         call. There are many things you might do here, this is just one simple
         example.
         """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-rg", "--research-group", dest="research_group", default=None)
+        (options, unknown_args) = parser.parse_known_args(args)
+
         # Use use the database VIEW `ImageList.<project>` to get the SeriesCodes for the `Step` we need.
         all_codes = ProcessingLog().get_project_images(project_name, image_type='T1')
-        #LOGGER.info('from queue method: all_codes = ' + all_codes)
-        #print(all_codes)
 
-        # We typically want to exclude codes we've already run or attempted.
         attempted_rows = ProcessingLog().get_step_attempted(project_name, PROCESS_TITLE, 'stage')
-        #LOGGER.info('from queue method: attempted_rows = ' + attempted_rows)
-        #print(attempted_rows)
-
         attempted = [row[1] for row in attempted_rows]
-        #LOGGER.info('from queue method: attempted = ' + attempted)
-        #print(attempted)
 
         #  Codes not initiated.
         todo_codes = [row['Code'] for row in all_codes if row['Code'] not in attempted]
 
-        # Filter into bins by RG.
-        #groups = ['AD', 'CN', 'EMCI', 'LMCI', 'MCI', 'SMC']
-        groups = ['AD']
-        # Initialize counters for each group.
-        cnt_dict = { grp:0 for grp in groups }
-        todo = []
-        for code in todo_codes:
-            rg = repo.get_research_group(code)
-            if cnt_dict[rg] < 11:
-                todo.append( {'ProjectName': project_name, "Code": row['Code']} )
-                cnt_dict[rg]+=1
+        if research_groups is not None:
+            todo = []
+            for code in todo_codes:
+                rg = repo.get_research_group(code)
+                if options.research_group == rg:
+                    todo.append( {'ProjectName': project_name, "Code": row['Code']} )
+        else:
+            todo = [ {'ProjectName': project_name, "Code": row['Code']} for row in todo_codes ]
 
         return todo
 
