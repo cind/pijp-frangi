@@ -1,6 +1,6 @@
 """
 Most pipelines will require some custom database query.
-This template should help you get started. 
+This template should help you get started.
 
 ALWAYS provide logging for the query, `LOGGER.debug(sql)`.
 """
@@ -27,7 +27,7 @@ class Repository(object):
         sql = f"SELECT ResearchGroup FROM ImageList.{self.project} where Code = '{code}'"
         cursor = self.db.execute(sql)
         return _trans_to_dict(cursor)
-    
+
     def get_imagetype(self,code,image_type):
         """
         Gets the specified image for a subject (T1 or FLAIR)
@@ -36,4 +36,11 @@ class Repository(object):
         cursor = self.db.execute(sql)
         return _trans_to_dict(cursor)
 
-    
+    def get_project_images(self, image_type, research_group):
+        sql = f"""
+            SELECT Code, ResearchGroup
+            FROM ImageList.{self.project}
+            WHERE ImageType = '{image_type}'
+            """
+        cursor = self.db.execute(sql)
+        return _trans_to_dict(cursor)
