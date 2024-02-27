@@ -496,27 +496,30 @@ exit;"""
         call. There are many things you might do here, this is just one simple
         example.
         """
+        rep = repo.Repository(project_name)
         parser = argparse.ArgumentParser()
         parser.add_argument("-rg", "--research-group", dest="research_group", default=None)
         (options, unknown_args) = parser.parse_known_args(args)
 
         # Use use the database VIEW `ImageList.<project>` to get the SeriesCodes for the `Step` we need.
-        all_codes = ProcessingLog().get_project_images(project_name, image_type='T1')
+        #all_codes = ProcessingLog().get_project_images(project_name, image_type='T1')
+
+        # List of dicts: code and RG
+        all_codes = rep.get_project_images('T1', options.research_group)
 
         attempted_rows = ProcessingLog().get_step_attempted(project_name, PROCESS_TITLE, 'stage')
         attempted = [row[1] for row in attempted_rows]
 
         #  Codes not initiated.
-        todo_codes = [row['Code'] for row in all_codes if row['Code'] not in attempted]
+        todo_codes = [ {"code":row['Code'], "rg":row["ResearchGroup"]} for row in all_codes if row['Code'] not in attempted]
 
-        if research_groups is not None:
+        if options.research_group is not None:
             todo = []
-            for code in todo_codes:
-                rg = repo.Repository(project_name).get_researchgroup(code)[0]['ResearchGroup']
-                if options.research_group == rg:
-                    todo.append( {'ProjectName': project_name, "Code": row['Code']} )
+            for item in todo_codes:
+                if options.research_group == item['rg']:
+                    todo.append( {'ProjectName': project_name, "Code": item['code']} )
         else:
-            todo = [ {'ProjectName': project_name, "Code": row['Code']} for row in todo_codes ]
+            todo = [ {'ProjectName': project_name, "Code": row['code']} for row in todo_codes ]
 
         return todo
 
