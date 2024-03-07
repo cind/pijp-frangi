@@ -703,7 +703,7 @@ class Analyze(Stage):
 
         # new addition: remove anything that is 5 vx (inspo: Schwartz et al )
         noise = os.path.join(self.working_dir, self.code + '-1voxelnoise.nii.gz')
-        cmd_compnoise = f'MaskComponents --input {output} --mixvoxels {5} --output {noise}'
+        cmd_compnoise = f'MaskComponents --input {output} --minvoxels {5} --output {noise}'
         self.commands.qit(cmd_compnoise)
         cmd_removenoise = f'MaskBinarize --input {noise} --output {output}'
         self.commands.qit(cmd_removenoise)
