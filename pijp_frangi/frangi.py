@@ -241,7 +241,7 @@ class Stage(BaseStep):
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
 
-        faulty_subject_list = os.path.join(self.proj_root,'faulty_subjects.txt')
+        faulty_subject_list = os.path.join(self.proj_root,'faulty_subjects.csv')
 
         flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
 
@@ -731,7 +731,7 @@ class Analyze(Stage):
 
         return count, vol, icv_normed
     
-#####--------functions for stats---------#########
+################----------------functions for stats---------------################
     def icv_calc(self, asegstats):
         stat = pd.read_csv(asegstats)
         self.icv = stat['EstimatedTotalIntraCranialVol'][0]
@@ -754,10 +754,10 @@ class Analyze(Stage):
         gmvol = stats.loc['volume'][0]
         gmvol_normed = gmvol / self.icv
 
-        
+        icv = self.icv
 
 
-        return gmvol,gmvol_normed
+        return gmvol, gmvol_normed, icv
 
 
 
