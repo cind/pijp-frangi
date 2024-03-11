@@ -230,12 +230,14 @@ class Stage(BaseStep):
         if len(rg) == 0:
             raise ProcessingError("No Research Group found.")
 
-        # i actually dunno what this does bc the flairs are already being checked below
-        # commenting this out because it's preventing some subjects from being run
-        # if len(flair_check) == 0:
-        #     raise ProcessingError("No FLAIR found.")
-        # elif len(flair_check) > 1:
-        #     raise ProcessingError("Found more than 1 FLAIR.")
+        # this will just catch if the flair doesn't exst; should probably move the file statements here
+        # otherwise if the flair doesn't exist it will immediately throw an index out of bounds error
+        # so need to check the length before indexing it
+        
+        if len(flair_check) == 0:
+            raise ProcessingError("No FLAIR found.")
+        elif len(flair_check) > 1:
+            raise ProcessingError("Found more than 1 FLAIR.")
 
         t1mgz = os.path.join(self.mrifolder, 'T1.mgz')
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
