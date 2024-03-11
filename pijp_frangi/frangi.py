@@ -244,8 +244,10 @@ class Stage(BaseStep):
         faulty_subject_list = os.path.join(self.proj_root,'faulty_subjects.csv')
 
         flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
+        print(flair_raw)
 
         t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
+        print(flair_raw)
 
         #testing queue method
         #get_queue(self.project)
