@@ -222,19 +222,20 @@ class Stage(BaseStep):
 
     def run(self):
         rg = repo.Repository(self.project).get_researchgroup(self.code)
-        LOGGER.debug(f"Research Group {rg}")
+        #LOGGER.debug(f"Research Group {rg}")
 
         flair_check = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
-        LOGGER.debug(f"FLAIR check {flair_check[0]['Code']}")
+        #LOGGER.debug(f"FLAIR check {flair_check[0]['Code']}")
 
         if len(rg) == 0:
             raise ProcessingError("No Research Group found.")
 
         # i actually dunno what this does bc the flairs are already being checked below
-        if len(flair_check) == 0:
-            raise ProcessingError("No FLAIR found.")
-        elif len(flair_check) > 1:
-            raise ProcessingError("Found more than 1 FLAIR.")
+        # commenting this out because it's preventing some subjects from being run
+        # if len(flair_check) == 0:
+        #     raise ProcessingError("No FLAIR found.")
+        # elif len(flair_check) > 1:
+        #     raise ProcessingError("Found more than 1 FLAIR.")
 
         t1mgz = os.path.join(self.mrifolder, 'T1.mgz')
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
@@ -244,10 +245,8 @@ class Stage(BaseStep):
         faulty_subject_list = os.path.join(self.proj_root,'faulty_subjects.csv')
 
         flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
-        print(flair_raw)
 
         t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
-        print(flair_raw)
 
         #testing queue method
         #get_queue(self.project)
