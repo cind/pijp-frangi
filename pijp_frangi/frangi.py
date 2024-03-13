@@ -797,6 +797,8 @@ class Analyze(Stage):
     
     def structural_volume_measure(self):
         wm_vol = os.path.join(self.working_dir,self.code + '-wmvol.csv')
+        cmd_bin = f'MaskBinarize --input {self.wmmask} --output {self.wmmask}'
+        self.commands.qit(cmd_bin)
         cmd_maskmeas_wm = f'MaskMeasure --input {self.wmmask} --output {wm_vol}'
         self.commands.qit(cmd_maskmeas_wm)
         wmstats = pd.read_csv(wm_vol,index_col=0)
@@ -804,6 +806,8 @@ class Analyze(Stage):
         wmvol_normed = wmvol / self.icv
 
         gm_vol = os.path.join(self.working_dir,self.code + '-gmvol.csv')
+        cmd_bin = f'MaskBinarize --input {self.gmmask} --output {self.gmmask}'
+        self.commands.qit(cmd_bin)
         cmd_maskmeas_gm = f'MaskMeasure --input {self.gmmask} --output {gm_vol}'
         self.commands.qit(cmd_maskmeas_gm)
         gmstats = pd.read_csv(gm_vol,index_col=0)
@@ -811,6 +815,8 @@ class Analyze(Stage):
         gmvol_normed = gmvol / self.icv
 
         wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
+        cmd_bin = f'MaskBinarize --input {self.wmhmask} --output {self.wmhmask}'
+        self.commands.qit(cmd_bin)
         cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --output {wmh_vol}'
         self.commands.qit(cmd_maskmeas)
         wmhstats = pd.read_csv(wmh_vol,index_col=0)
