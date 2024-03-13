@@ -774,9 +774,9 @@ class Analyze(Stage):
         cmd_maskmeas = f'MaskMeasure --input {compname} --comps --counts --position --output {statsname}'
         self.commands.qit(cmd_maskmeas)
 
-        stats = pd.read_csv(statsname, index_col=0)
-        count =  stats.loc['component_count'][0]    # number of PVS counted
-        vol = stats.loc['component_sum'][0]       # number of voxels
+        pvsstats = pd.read_csv(statsname, index_col=0)
+        count =  pvsstats.loc['component_count'][0]    # number of PVS counted
+        vol = pvsstats.loc['component_sum'][0]       # number of voxels
 
         #just for the purposes of logging, self.xxx variables not actually used
         self.count = count
@@ -797,30 +797,29 @@ class Analyze(Stage):
     
     def structural_volume_measure(self):
         wm_vol = os.path.join(self.working_dir,self.code + '-wmvol.csv')
-        cmd_maskmeas_wm = f'MaskMeasure --input {self.wmmask} --comps --counts --output {wm_vol}'
+        cmd_maskmeas_wm = f'MaskMeasure --input {self.wmmask} --output {wm_vol}'
         self.commands.qit(cmd_maskmeas_wm)
-        wmstats = pd.readcsv(wm_vol,index_col=0)
+        wmstats = pd.read_csv(wm_vol,index_col=0)
         wmvol = wmstats.loc['volume'][0]
         wmvol_normed = wmvol / self.icv
 
         gm_vol = os.path.join(self.working_dir,self.code + '-gmvol.csv')
-        cmd_maskmeas_gm = f'MaskMeasure --input {self.gmmask} --comps --counts --output {gm_vol}'
+        cmd_maskmeas_gm = f'MaskMeasure --input {self.gmmask} --output {gm_vol}'
         self.commands.qit(cmd_maskmeas_gm)
-        gmstats = pd.readcsv(gm_vol,index_col=0)
+        gmstats = pd.read_csv(gm_vol,index_col=0)
         gmvol = gmstats.loc['volume'][0]
         gmvol_normed = gmvol / self.icv
 
         wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
-        cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --comps --counts --output {wmh_vol}'
+        cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --output {wmh_vol}'
         self.commands.qit(cmd_maskmeas)
-        wmhstats = pd.readcsv(wmh_vol,index_col=0)
+        wmhstats = pd.read_csv(wmh_vol,index_col=0)
         wmhvol = wmhstats.loc['volume'][0]
         wmhvol_normed = wmhvol / self.icv
     
         icv = self.icv
 
         return wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv
-
 
 
 def run():
