@@ -18,6 +18,8 @@ import nibabel as nib
 from matplotlib import pyplot as plt
 from scipy import stats
 import glob
+import skimage as ski
+
 
 # Before loading NUMPY: HACK to avoid seg fault on some hosts.
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -72,6 +74,7 @@ class BaseStep(Step):
         self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii')
 
         self.t1raw = os.path.join(self.working_dir, self.code + "-T1raw.nii.gz")
+        self.flairt1 = os.path.join(self.working_dir, self.code + "-flairT1.nii.gz")
 
 
 
@@ -233,11 +236,20 @@ class Stage(BaseStep):
         # this will just catch if the flair doesn't exst; should probably move the file statements here
         # otherwise if the flair doesn't exist it will immediately throw an index out of bounds error
         # so need to check the length before indexing it
-        
+
         if len(flair_check) == 0:
-            raise ProcessingError("No FLAIR found.")
+            file1 = open(faulty_subject_list,'a')
+            file1.write(self.code + ': missing raw flair \n')
+            file1.close()
+            LOGGER.info("FLAIR nifti is missing from `Raw`")
+            # raise ProcessingError("No FLAIR found.")
         elif len(flair_check) > 1:
-            raise ProcessingError("Found more than 1 FLAIR.")
+            file1 = open(faulty_subject_list,'a')
+            file1.write(self.code + ': found more than 1 flair \n')
+            file1.close()
+            LOGGER.info("Found more than 1 FLAIR")
+            # raise ProcessingError("Found more than 1 FLAIR.")
+
 
         t1mgz = os.path.join(self.mrifolder, 'T1.mgz')
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
@@ -249,9 +261,6 @@ class Stage(BaseStep):
         flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
 
         t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
-
-        #testing queue method
-        #get_queue(self.project)
 
         if os.path.exists(t1mgz):
             self.mgz_convert(t1mgz, self.t1)
@@ -270,12 +279,12 @@ class Stage(BaseStep):
         if os.path.exists(flair_raw):
             self.make_wmhmask(self.t1, flair_raw)
             #self.make_wmhmask2()   causing problems
-        if not os.path.exists(flair_raw):
-            file1 = open(faulty_subject_list,'a')
-            file1.write(self.code + ': missing raw flair \n')
-            file1.close()
-            #raise ProcessingError("FLAIR nifti is missing from `Raw`")
-            LOGGER.info("FLAIR nifti is missing from `Raw`")
+        # if not os.path.exists(flair_raw):
+        #     file1 = open(faulty_subject_list,'a')
+        #     file1.write(self.code + ': missing raw flair \n')
+        #     file1.close()
+        #     #raise ProcessingError("FLAIR nifti is missing from `Raw`")
+        #     LOGGER.info("FLAIR nifti is missing from `Raw`")
 
         if os.path.exists(t1_raw):
             self.process_raw(t1_raw,self.t1,1,2)
@@ -285,6 +294,9 @@ class Stage(BaseStep):
             file1.close()
             #raise ProcessingError("T1 nifti is missing from `Raw`")
             LOGGER.info("T1 nifti is missing from `Raw`")
+
+        # not yet running: flairt1
+        self.flairt1(self.flairT1)
 
 
     ####---some basic processing functions---#####
@@ -309,7 +321,8 @@ class Stage(BaseStep):
 
     def NLMDenoise(self,input,output,p,s):
         """Args: input, patch size, search radius, output"""
-        cmd = f'DenoiseImage -i {input} -p {p} -r {s} -o {output}'
+        noise = 'Rician'
+        cmd = f'DenoiseImage -i {input} -n {noise} -p {p} -r {s} -o {output}'
         self.commands.ants(cmd)
 
 
@@ -332,7 +345,6 @@ class Stage(BaseStep):
         self.commands.ants(dn_cmd)
 
         LOGGER.info(self.code + ': raw T1 processed! ')
-
 
     def make_greymask(self, maskmgz):
         img = nib.load(maskmgz)
@@ -387,12 +399,10 @@ class Stage(BaseStep):
 
         LOGGER.info(self.code + ': all mask done! ')
 
-
     def make_wmhmask(self, t1, input_flair):
         """
         WMH removal
         """
-
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         os.makedirs(os.path.join(self.working_dir, 'wmhlesion'), exist_ok=True)
         shutil.copy(input_flair, wmhlesion_folder)
@@ -448,7 +458,7 @@ exit;"""
         LOGGER.info(self.code + ': wmhmasks done!')
 
     def make_wmhmask2(self):
-        """Secondary WMH mask that is only based on an intensity threshold. Adds to the existing LST produced WMH mask. Currently testing: 12/4/23"""
+        """Secondary WMH mask that is only based on an intensity threshold. Adds to the existing LST produced WMH mask. Currently testing: 12/4/23. Not in use: 1/25/24"""
 
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         flair_bcreg = os.path.join(self.working_dir, wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
@@ -467,6 +477,16 @@ exit;"""
         cmd_totalwmhmask = f'MaskUnion --left {self.wmhmask} --right {self.wmhmask2} --output {self.total_wmhmask}'
         self.commands.qit(cmd_totalwmhmask)
 
+    # new addition: flair+t1
+    def flairt1(self,flairt1):
+        wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
+        flairinlesion = os.path.join(wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
+        flair = os.path.join(self.working_dir, self.code + "_FLAIRbcreg.nii.gz")
+        shutil.copy(flairinlesion,flair)
+        t1raw_bc = os.path.join(self.working_dir,self.code+'_T1raw_regbc.nii.gz')
+
+        cmd_add = f'fslmaths {flair} -add {t1raw_bc} {flairt1}'
+        self.commands.fsl(cmd_add)
 
 
     def _parse_args(self, args):
@@ -559,6 +579,7 @@ class Analyze(Stage):
         subject = self.code
         researchgroup = self.researchgroup
         self.icv_calc(self.asegstats)
+        wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv = self.structural_volume_measure()
 
         if os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
@@ -573,11 +594,11 @@ class Analyze(Stage):
             WMHstatus = 'yes'
 
         else:
-            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
+            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
-            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
+            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm.nii.gz")
             self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm')
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
@@ -585,18 +606,20 @@ class Analyze(Stage):
             WMHstatus = 'no'
 
         # for grand PVS report
-        col = ['subjects','research group','pvscount','pvsvol','icv norm','pvscountwm','pvsvolwm','icv norm wm','raw','WMH mask']
+        col = ['subjects','research group','pvscount','pvsvol','icvnorm','pvscountwm','pvsvolwm','icvnormwm', \
+               'wmVOL','wmVOLnorm','gmVOL','gmVOLnorm','wmhVOL','wmhVOLnorm','raw','WMH mask']
         df_empty = pd.DataFrame(columns=col)
         datatable = os.path.join(self.proj_root,'grand_PVS_report.csv')
         if os.path.exists(datatable):
             df_data = pd.read_csv(datatable)
-            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, raw, WMHstatus]],columns=col)
+            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+                                             wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data = df_data.append(newsubject)
         else:
             df_empty.to_csv(datatable,index=False)
-
             df_data = pd.read_csv(datatable)
-            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, raw, WMHstatus]],columns=col)
+            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+                                             wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data = df_data.append(newsubject)
 
         # clean any duplicates
@@ -640,13 +663,15 @@ class Analyze(Stage):
 
         if os.path.exists(datatable_raw):
             df_data_raw = pd.read_csv(datatable_raw)
-            newsubject_raw = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, raw, WMHstatus]],columns=col)
+            newsubject_raw = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+                                                 wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data_raw = df_data_raw.append(newsubject_raw)
         else:
             df_empty_raw.to_csv(datatable_raw,index=False)
 
             df_data_raw = pd.read_csv(datatable_raw)
-            newsubject_raw = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, raw, WMHstatus]],columns=col)
+            newsubject_raw = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+                                                 wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data_raw = df_data_raw.append(newsubject_raw)
 
         df_cleaned_raw = df_data_raw
@@ -675,7 +700,7 @@ class Analyze(Stage):
         half_max = hes_csv.loc['max'][0]/2
 
         # frangi calculation
-        frangi_mask = os.path.join(self.working_dir, self.code +'-frangimask' + region + '.nii.gz')
+        frangi_mask = os.path.join(self.working_dir, self.code + '-frangimask' + region + '.nii.gz')
         if imagetype == 'T1':
             cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
         elif imagetype == 'T2':
@@ -683,33 +708,61 @@ class Analyze(Stage):
         else:
             LOGGER.info(self.code + ': oops, you did not input a valid image type')
         self.commands.qit(cmd_frangi)
+        
+        # possible thresholds:
+            # default (1 size fits all)
+            # regional (1 threshold per region)
+            # percentage (threshold is dependent on frangi mask value range)
+            # dynamic (watershed)
+        
+        # other cleaning:
+            # wmh removal
+            # noise removal
+            # binarize
+        
+        # old threshold method
+        # cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
+        # self.commands.qit(cmd_threshold)
+        
+        # new addition: watershed thresholding
+        frangi_watershed = os.path.join(self.working_dir,self.code + '-frangimask-watershed.nii.gz')
 
-        if wmhmask is not None:
-            pre_output = os.path.join(self.working_dir, self.code + '-frangimask' + region + '-thresholded.nii.gz')
-            cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {pre_output}'
-            self.commands.qit(cmd_threshold)
+        img = nib.load(frangi_mask)
+        imgdata = img.get_fdata()
+        markers = np.zeros_like(imgdata)
+        markers[imgdata < imgdata.max()*.02] = 0
+        markers[imgdata > imgdata.max()*.02] = 1
+        markersarr = markers.astype(int)
+        segmentation = ski.segmentation.watershed(imgdata,markersarr,mask=imgdata)
+        watershed = nib.Nifti1Image(segmentation, img.affine)
+        nib.save(watershed, frangi_watershed)
 
-            cmd_removewmh = f'MaskSet --input {pre_output} --mask {wmhmask} --label {0} --output {output}'
-            self.commands.qit(cmd_removewmh)
-
-        else:
-            cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
-            self.commands.qit(cmd_threshold)
-            LOGGER.info(self.code + ': oh no! WMH did not exist, skipped WMH subtraction in Frangi analysis')
+        cmd_binarize = f'MaskBinarize --input {frangi_watershed} --output {frangi_watershed}'
+        self.commands.qit(cmd_binarize)
 
         # new addition: remove any gigantic blobs that probably are not PVS
+        frangi_blobremoval = os.path.join(self.working_dir,self.code + '-frangimask-blobremoval.nii.gz')
         unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs.nii.gz')
-        cmd_compblob = f'MaskComponents --input {output} --minvoxels {500} --output {unwantedblobs}'
+        cmd_compblob = f'MaskComponents --input {frangi_watershed} --minvoxels {500} --output {unwantedblobs}'
         self.commands.qit(cmd_compblob)
-        cmd_removeblob = f'MaskSet --input {output} --mask {unwantedblobs} --label {0} --output {output}'
+        cmd_removeblob = f'MaskSet --input {frangi_watershed} --mask {unwantedblobs} --label {0} --output {frangi_blobremoval}'
         self.commands.qit(cmd_removeblob)
 
         # new addition: remove anything that is 5 vx (inspo: Schwartz et al )
-        noise = os.path.join(self.working_dir, self.code + '-1voxelnoise.nii.gz')
-        cmd_compnoise = f'MaskComponents --input {output} --minvoxels {5} --output {noise}'
+        # change to 3 
+        noise = os.path.join(self.working_dir, self.code + '-frangimask-removenoise.nii.gz')
+        cmd_compnoise = f'MaskComponents --input {frangi_blobremoval} --minvoxels {3} --output {noise}'
         self.commands.qit(cmd_compnoise)
-        cmd_removenoise = f'MaskBinarize --input {noise} --output {output}'
+        cmd_removenoise = f'MaskBinarize --input {noise} --output {noise}'
         self.commands.qit(cmd_removenoise)
+
+        # wmh removal
+        if wmhmask is not None:
+            cmd_removewmh = f'MaskSet --input {noise} --mask {wmhmask} --label {0} --output {output}'
+            self.commands.qit(cmd_removewmh)
+        else:
+            shutil.copy(noise,output)
+            LOGGER.info(self.code + ': oh no! WMH did not exist, skipped WMH subtraction in Frangi analysis')
 
         LOGGER.info(self.code + ': frangi analysis done! almost there :)')
 
@@ -718,7 +771,7 @@ class Analyze(Stage):
         cmd_comp = f'MaskComponents --input {frangimask} --output {compname}'
         self.commands.qit(cmd_comp)
 
-        cmd_maskmeas = f'MaskMeasure --input {compname} --comps --counts --output {statsname}'
+        cmd_maskmeas = f'MaskMeasure --input {compname} --comps --counts --position --output {statsname}'
         self.commands.qit(cmd_maskmeas)
 
         stats = pd.read_csv(statsname, index_col=0)
@@ -740,27 +793,30 @@ class Analyze(Stage):
         self.icv = stat['EstimatedTotalIntraCranialVol'][0]
 
         LOGGER.info(self.code + ': icv calc done! ')
+        
     
-    def wmh_volume(self):
+    def structural_volume_measure(self):
+        wm_vol = os.path.join(self.working_dir,self.code + '-wmvol.csv')
+        cmd_maskmeas_wm = f'MaskMeasure --input {self.wmmask} --comps --counts --output {wm_vol}'
+        self.commands.qit(cmd_maskmeas_wm)
+        wmvol = stats.loc['volume'][0]
+        wmvol_normed = wmvol / self.icv
+
+        gm_vol = os.path.join(self.working_dir,self.code + '-gmvol.csv')
+        cmd_maskmeas_gm = f'MaskMeasure --input {self.gmmask} --comps --counts --output {gm_vol}'
+        self.commands.qit(cmd_maskmeas_gm)
+        gmvol = stats.loc['volume'][0]
+        gmvol_normed = gmvol / self.icv
+
         wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
         cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --comps --counts --output {wmh_vol}'
         self.commands.qit(cmd_maskmeas)
         wmhvol = stats.loc['volume'][0]
         wmhvol_normed = wmhvol / self.icv
-
-        return wmhvol, wmhvol_normed
     
-    def structural_volume(self):
-        gm_vol = os.path.join(self.working_dir,self.code + '-gmvol.csv')
-        cmd_maskmeas = f'MaskMeasure --input {self.gmmask} --comps --counts --output {gm_vol}'
-        self.commands.qit(cmd_maskmeas)
-        gmvol = stats.loc['volume'][0]
-        gmvol_normed = gmvol / self.icv
-
         icv = self.icv
 
-
-        return gmvol, gmvol_normed, icv
+        return wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv
 
 
 
