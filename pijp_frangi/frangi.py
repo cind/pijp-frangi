@@ -799,19 +799,22 @@ class Analyze(Stage):
         wm_vol = os.path.join(self.working_dir,self.code + '-wmvol.csv')
         cmd_maskmeas_wm = f'MaskMeasure --input {self.wmmask} --comps --counts --output {wm_vol}'
         self.commands.qit(cmd_maskmeas_wm)
-        wmvol = stats.loc['volume'][0]
+        wmstats = pd.readcsv(wm_vol,index_col=0)
+        wmvol = wmstats.loc['volume'][0]
         wmvol_normed = wmvol / self.icv
 
         gm_vol = os.path.join(self.working_dir,self.code + '-gmvol.csv')
         cmd_maskmeas_gm = f'MaskMeasure --input {self.gmmask} --comps --counts --output {gm_vol}'
         self.commands.qit(cmd_maskmeas_gm)
-        gmvol = stats.loc['volume'][0]
+        gmstats = pd.readcsv(gm_vol,index_col=0)
+        gmvol = gmstats.loc['volume'][0]
         gmvol_normed = gmvol / self.icv
 
         wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
         cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --comps --counts --output {wmh_vol}'
         self.commands.qit(cmd_maskmeas)
-        wmhvol = stats.loc['volume'][0]
+        wmhstats = pd.readcsv(wmh_vol,index_col=0)
+        wmhvol = wmhstats.loc['volume'][0]
         wmhvol_normed = wmhvol / self.icv
     
         icv = self.icv
