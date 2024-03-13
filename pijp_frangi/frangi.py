@@ -69,7 +69,7 @@ class BaseStep(Step):
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
         self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii')
-        self.greymask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
+        self.gmmask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
         self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask_thresh.nii')
         self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii')
 
@@ -362,7 +362,7 @@ class Stage(BaseStep):
             mask[data == m] = m
 
         maskimg = nib.Nifti1Image(mask, img.affine)
-        nib.save(maskimg, self.greymask)
+        nib.save(maskimg, self.gmmask)
 
         LOGGER.info(self.code + ': make grey mask done! ')
 
@@ -390,7 +390,7 @@ class Stage(BaseStep):
         LOGGER.info(self.code + ': white matter mask done! ')
 
     def make_allmask(self):
-        cmd_union = f'MaskUnion --left {self.wmmask} --right {self.greymask} --output {self.allmask}'
+        cmd_union = f'MaskUnion --left {self.wmmask} --right {self.gmmask} --output {self.allmask}'
         self.commands.qit(cmd_union)
 
         cmd_binarize = f'MaskBinarize --input {self.allmask} --output {self.allmask}'
