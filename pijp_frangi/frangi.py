@@ -18,7 +18,7 @@ import nibabel as nib
 from matplotlib import pyplot as plt
 from scipy import stats
 import glob
-import skimage as ski
+import skimage.segmentation
 
 
 # Before loading NUMPY: HACK to avoid seg fault on some hosts.
@@ -607,7 +607,7 @@ class Analyze(Stage):
 
         # for grand PVS report
         col = ['subjects','research group','pvscount','pvsvol','icvnorm','pvscountwm','pvsvolwm','icvnormwm', \
-               'wmVOL','wmVOLnorm','gmVOL','gmVOLnorm','wmhVOL','wmhVOLnorm','raw','WMH mask']
+               'wmVOL','wmVOLnorm','gmVOL','gmVOLnorm','wmhVOL','wmhVOLnorm','icv','raw','WMH mask']
         df_empty = pd.DataFrame(columns=col)
         datatable = os.path.join(self.proj_root,'grand_PVS_report.csv')
         if os.path.exists(datatable):
@@ -631,7 +631,6 @@ class Analyze(Stage):
         newsubject.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=False)
 
 
-
         # for raw processing:
         if os.path.exists(self.t1raw) & os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_RAW.nii.gz")
@@ -646,11 +645,11 @@ class Analyze(Stage):
             WMHstatus = 'yes'
 
         elif os.path.exists(self.t1raw):
-            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_RAW.nii.gz")
+            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded_RAW.nii.gz")
             self.frangi_analysis(self.t1raw, self.allmask, 0.00004, frangimask_all)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
 
-            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_RAW.nii.gz")
+            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm_RAW.nii.gz")
             self.frangi_analysis(self.t1raw, self.wmmask, 0.00004, frangimask_wm, region = 'wm')
             count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
 
@@ -730,11 +729,11 @@ class Analyze(Stage):
         img = nib.load(frangi_mask)
         imgdata = img.get_fdata()
         markers = np.zeros_like(imgdata)
-        markers[imgdata < imgdata.max()*.02] = 0
-        markers[imgdata > imgdata.max()*.02] = 1
+        markers[imgdata < imgdata.max()*.003] = 0
+        markers[imgdata > imgdata.max()*.003] = 1
         markersarr = markers.astype(int)
-        segmentation = ski.segmentation.watershed(imgdata,markersarr,mask=imgdata)
-        watershed = nib.Nifti1Image(segmentation, img.affine)
+        watershedsegmentation = skimage.segmentation.watershed(imgdata,markersarr,mask=imgdata)
+        watershed = nib.Nifti1Image(watershedsegmentation, img.affine)
         nib.save(watershed, frangi_watershed)
 
         cmd_binarize = f'MaskBinarize --input {frangi_watershed} --output {frangi_watershed}'
