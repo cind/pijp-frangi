@@ -494,6 +494,9 @@ exit;"""
         cmd_denoise = f'DenoiseImage -i {output} -n {noise} -p {p} -r {s} -o {self.flairT1dn}'
         self.commands.ants(cmd_denoise)
 
+        LOGGER.info(self.code + ': make flair+t1 done!')
+
+
     def _parse_args(self, args):
         """
         You may want to parse additional step args.
