@@ -634,13 +634,14 @@ class Analyze(Stage):
                                              wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data = df_data.append(newsubject)
 
+        # for individual report
+        newsubject.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=False)
+
         # clean any duplicates
         df_cleaned = df_data
         df_cleaned.drop_duplicates(subset='subjects',keep='last',inplace=True)
         df_cleaned.to_csv(datatable,index=False)
 
-        # for individual report
-        newsubject.to_csv(os.path.join(self.working_dir, self.code+'_report.csv'), index=False)
 
         ##### dropping the RAW calculation and the FLAIR+T1 calculations for now to make things go faster
 
@@ -723,14 +724,17 @@ class Analyze(Stage):
             newsubject_FT1 = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
                                                  wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data_FT1 = df_data_FT1.append(newsubject_FT1)
+
+        # for individual report
+        newsubject_FT1.to_csv(os.path.join(self.working_dir, self.code+'_report_FLAIRT1.csv'), index=False)
         
+        #for grand report
         # clean any duplicates
         df_cleaned_FT1 = df_data_FT1
         df_cleaned_FT1.drop_duplicates(subset='subjects',keep='last',inplace=True)
         df_cleaned_FT1.to_csv(datatable_FT1,index=False)
 
-        # for individual report
-        newsubject_FT1.to_csv(os.path.join(self.working_dir, self.code+'_report_FLAIRT1.csv'), index=False)
+    
 
 
 
