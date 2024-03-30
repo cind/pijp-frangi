@@ -691,48 +691,48 @@ class Analyze(Stage):
 
         #########-------------For Grand PVS report FLAIR+T1--------------#########
         # frangi filter processing for FLAIR+T1:
-        if os.path.exists(self.flairT1dn) & os.path.exists(self.wmhmask):
-            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_FT1.nii.gz")
-            self.frangi_analysis(self.flairT1dn, self.allmask, 0.0025, frangimask_all, wmhmask = self.wmhmask)
-            count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
-            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_FT1.nii.gz")
-            self.frangi_analysis(self.flairT1dn, self.wmmask, 0.0025, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
-            count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
-            raw = 'yes'
-            WMHstatus = 'yes'
-        elif os.path.exists(self.flairT1dn):
-            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded_FT1.nii.gz")
-            self.frangi_analysis(self.flairT1dn, self.allmask, 0.0025, frangimask_all)
-            count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
-            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm_FT1.nii.gz")
-            self.frangi_analysis(self.flairT1dn, self.wmmask, 0.0025, frangimask_wm, region = 'wm')
-            count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
-            raw = 'yes'
-            WMHstatus = 'no'
+        # if os.path.exists(self.flairT1dn) & os.path.exists(self.wmhmask):
+        #     frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem_FT1.nii.gz")
+        #     self.frangi_analysis(self.flairT1dn, self.allmask, 0.0025, frangimask_all, wmhmask = self.wmhmask)
+        #     count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
+        #     frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem_FT1.nii.gz")
+        #     self.frangi_analysis(self.flairT1dn, self.wmmask, 0.0025, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
+        #     count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
+        #     raw = 'yes'
+        #     WMHstatus = 'yes'
+        # elif os.path.exists(self.flairT1dn):
+        #     frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded_FT1.nii.gz")
+        #     self.frangi_analysis(self.flairT1dn, self.allmask, 0.0025, frangimask_all)
+        #     count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
+        #     frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm_FT1.nii.gz")
+        #     self.frangi_analysis(self.flairT1dn, self.wmmask, 0.0025, frangimask_wm, region = 'wm')
+        #     count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
+        #     raw = 'yes'
+        #     WMHstatus = 'no'
 
-        # for grand PVS report FLAIR+T1
-        df_empty_FT1 = pd.DataFrame(columns=col)
-        datatable_FT1 = os.path.join(self.proj_root,'grand_PVS_report_FLAIRT1.csv')
-        if os.path.exists(datatable_FT1):
-            df_data_FT1 = pd.read_csv(datatable_FT1)
-            newsubject_FT1 = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
-                                                 wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
-            df_data_FT1 = df_data_FT1.append(newsubject_FT1)
-        else:
-            df_empty_FT1.to_csv(datatable_FT1,index=False)
-            df_data_FT1 = pd.read_csv(datatable_FT1)
-            newsubject_FT1 = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
-                                                 wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
-            df_data_FT1 = df_data_FT1.append(newsubject_FT1)
+        # # for grand PVS report FLAIR+T1
+        # df_empty_FT1 = pd.DataFrame(columns=col)
+        # datatable_FT1 = os.path.join(self.proj_root,'grand_PVS_report_FLAIRT1.csv')
+        # if os.path.exists(datatable_FT1):
+        #     df_data_FT1 = pd.read_csv(datatable_FT1)
+        #     newsubject_FT1 = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+        #                                          wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
+        #     df_data_FT1 = df_data_FT1.append(newsubject_FT1)
+        # else:
+        #     df_empty_FT1.to_csv(datatable_FT1,index=False)
+        #     df_data_FT1 = pd.read_csv(datatable_FT1)
+        #     newsubject_FT1 = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+        #                                          wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
+        #     df_data_FT1 = df_data_FT1.append(newsubject_FT1)
 
-        # for individual report
-        newsubject_FT1.to_csv(os.path.join(self.working_dir, self.code+'_report_FLAIRT1.csv'), index=False)
+        # # for individual report
+        # newsubject_FT1.to_csv(os.path.join(self.working_dir, self.code+'_report_FLAIRT1.csv'), index=False)
         
-        #for grand report
-        # clean any duplicates
-        df_cleaned_FT1 = df_data_FT1
-        df_cleaned_FT1.drop_duplicates(subset='subjects',keep='last',inplace=True)
-        df_cleaned_FT1.to_csv(datatable_FT1,index=False)
+        # #for grand report
+        # # clean any duplicates
+        # df_cleaned_FT1 = df_data_FT1
+        # df_cleaned_FT1.drop_duplicates(subset='subjects',keep='last',inplace=True)
+        # df_cleaned_FT1.to_csv(datatable_FT1,index=False)
 
     
 
