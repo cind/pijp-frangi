@@ -68,7 +68,7 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii.gz')
+        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii')
         self.gmmask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
         self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask2.nii.gz')
         self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii.gz')
@@ -487,6 +487,8 @@ exit;"""
         cmd_totalwmhmask = f'MaskUnion --left {self.wmhmask} --right {self.wmhmask2} --output {self.total_wmhmask}'
         self.commands.qit(cmd_totalwmhmask)
 
+        LOGGER.info(self.code + ': wmhmasks total done!')
+
     # new addition: flair+t1
     def make_flairt1(self,output):
         """New Addition 3/1/24: adding FLAIR and T1 together to make a FLAIR+T1 image. Final image is also denoised. Experimental."""
@@ -600,7 +602,7 @@ class Analyze(Stage):
         subject = self.code
         researchgroup = self.researchgroup
         self.icv_calc(self.asegstats)
-        wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv = self.structural_volume_measure()
+        wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv = self.structural_volume_measure(self.wmmask,self.gmmask,self.total_wmhmask)
 
         #########-------------For Grand PVS report--------------#########
         ## right now the thresholds don't mean anything
@@ -608,7 +610,7 @@ class Analyze(Stage):
         # # 4/2/24: running the simplest atm (no white matter calculation, no flair+t1)
  
         # frangi filter processing for regular
-        if os.path.exists(self.wmhmask):
+        if os.path.exists(self.total_wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.total_wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
@@ -867,29 +869,29 @@ class Analyze(Stage):
         LOGGER.info(self.code + ': icv calc done! ')
         
     
-    def structural_volume_measure(self):
+    def structural_volume_measure(self,wmmask,gmmask,wmhmask):
         wm_vol = os.path.join(self.working_dir,self.code + '-wmvol.csv')
-        cmd_bin = f'MaskBinarize --input {self.wmmask} --output {self.wmmask}'
+        cmd_bin = f'MaskBinarize --input {wmmask} --output {wmmask}'
         self.commands.qit(cmd_bin)
-        cmd_maskmeas_wm = f'MaskMeasure --input {self.wmmask} --output {wm_vol}'
+        cmd_maskmeas_wm = f'MaskMeasure --input {wmmask} --output {wm_vol}'
         self.commands.qit(cmd_maskmeas_wm)
         wmstats = pd.read_csv(wm_vol,index_col=0)
         wmvol = wmstats.loc['volume'][0]
         wmvol_normed = wmvol / self.icv
 
         gm_vol = os.path.join(self.working_dir,self.code + '-gmvol.csv')
-        cmd_bin = f'MaskBinarize --input {self.gmmask} --output {self.gmmask}'
+        cmd_bin = f'MaskBinarize --input {gmmask} --output {gmmask}'
         self.commands.qit(cmd_bin)
-        cmd_maskmeas_gm = f'MaskMeasure --input {self.gmmask} --output {gm_vol}'
+        cmd_maskmeas_gm = f'MaskMeasure --input {gmmask} --output {gm_vol}'
         self.commands.qit(cmd_maskmeas_gm)
         gmstats = pd.read_csv(gm_vol,index_col=0)
         gmvol = gmstats.loc['volume'][0]
         gmvol_normed = gmvol / self.icv
 
         wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
-        cmd_bin = f'MaskBinarize --input {self.wmhmask} --output {self.total_wmhmask}'
+        cmd_bin = f'MaskBinarize --input {wmhmask} --output {wmhmask}'
         self.commands.qit(cmd_bin)
-        cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --output {wmh_vol}'
+        cmd_maskmeas = f'MaskMeasure --input {wmhmask} --output {wmh_vol}'
         self.commands.qit(cmd_maskmeas)
         wmhstats = pd.read_csv(wmh_vol,index_col=0)
         wmhvol = wmhstats.loc['volume'][0]
