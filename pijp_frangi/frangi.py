@@ -296,8 +296,9 @@ class Stage(BaseStep):
             LOGGER.info("T1 nifti is missing from `Raw`")
 
         # running: flairT1
-        if os.path.exists(flair_raw):
-            self.make_flairt1(self.flairT1)
+        # 4/2/24: not running at the moment, only running simplest parts
+        # if os.path.exists(flair_raw):
+        #     self.make_flairt1(self.flairT1)
 
 
     ####---some basic processing functions---#####
@@ -580,8 +581,8 @@ class Analyze(Stage):
         self.volwm = -1
         self.icv_normedwm = -1
 
-        self.pvsstats = os.path.join(self.working_dir, self.code + '-pvsstats.csv')
-        self.comp = os.path.join(self.working_dir, self.code + '-frangi_comp.nii.gz')
+        self.pvsstats = os.path.join(self.working_dir, self.code + '-pvsstats-all.csv')
+        self.comp = os.path.join(self.working_dir, self.code + '-frangi_comp-all.nii.gz')
         self.pvsstats_wm = os.path.join(self.working_dir, self.code + '-pvsstats-wm.csv')
         self.comp_wm = os.path.join(self.working_dir, self.code + '-frangi_comp-wm.nii.gz')
 
@@ -594,43 +595,47 @@ class Analyze(Stage):
 
         #########-------------For Grand PVS report--------------#########
         ## right now the thresholds don't mean anything
+
+        # # 4/2/24: running the simplest atm (no white matter calculation, no flair+t1)
  
         # frangi filter processing for regular
         if os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
-            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
-            count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
+            # frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
+            # self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
+            # count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
             raw = 'no'
             WMHstatus = 'yes'
         else:
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
-            frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm.nii.gz")
-            self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm')
-            count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
+            # frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm.nii.gz")
+            # self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm')
+            # count_allwm, vol_allwm, icv_allwm = self.pvs_stats(frangimask_wm,self.comp_wm,self.pvsstats_wm)
             raw = 'no'
             WMHstatus = 'no'
 
         # for grand PVS report
         col = ['subjects','research group', \
                'pvscount','pvsvol','icvnorm', \
-               'pvscountwm','pvsvolwm','icvnormwm', \
+            #    'pvscountwm','pvsvolwm','icvnormwm', \
                'wmVOL','wmVOLnorm','gmVOL','gmVOLnorm','wmhVOL','wmhVOLnorm','icv','raw','WMH mask']
         df_empty = pd.DataFrame(columns=col)
         datatable = os.path.join(self.proj_root,'grand_PVS_report.csv')
         if os.path.exists(datatable):
             df_data = pd.read_csv(datatable)
-            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, \
+                                            #  count_allwm, vol_allwm, icv_allwm, \
                                              wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data = df_data.append(newsubject)
         else:
             df_empty.to_csv(datatable,index=False)
             df_data = pd.read_csv(datatable)
-            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
+            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, 
+                                            #  count_allwm, vol_allwm, icv_allwm, \
                                              wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data = df_data.append(newsubject)
 
