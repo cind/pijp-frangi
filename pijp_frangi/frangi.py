@@ -745,7 +745,7 @@ class Analyze(Stage):
         cmd_hes = f'VolumeFilterHessian --input {t1} --mask {mask} --mode Norm --output {hes}'
         self.commands.qit(cmd_hes)
 
-        hes_stats = os.path.join(self.working_dir, self.code + '-hessianstats' + region + '.csv')
+        hes_stats = os.path.join(self.working_dir, self.code + '-hessianstats-' + region + '.csv')
         cmd_hesstats = f'VolumeMeasure --input {hes} --output {hes_stats}'
         self.commands.qit(cmd_hesstats)
 
@@ -753,7 +753,7 @@ class Analyze(Stage):
         half_max = hes_csv.loc['max'][0]/2
 
         # frangi calculation
-        frangi_mask = os.path.join(self.working_dir, self.code + '-frangimask' + region + '.nii.gz')
+        frangi_mask = os.path.join(self.working_dir, self.code + '-frangimask-' + region + '.nii.gz')
         if imagetype == 'T1':
             cmd_frangi = f'VolumeFilterFrangi --input {t1} --mask {mask} --low {0.1} --high {5.0} --scales {10} --gamma {half_max} --dark --output {frangi_mask}'
         elif imagetype == 'T2':
@@ -780,7 +780,7 @@ class Analyze(Stage):
         # self.commands.qit(cmd_threshold)
         
         # new addition: watershed thresholding
-        frangi_watershed = os.path.join(self.working_dir,self.code + '-frangimask-watershed.nii.gz')
+        frangi_watershed = os.path.join(self.working_dir,self.code + '-frangimask-watershed-' + region + '.nii.gz')
 
         img = nib.load(frangi_mask)
         imgdata = img.get_fdata()
@@ -798,15 +798,15 @@ class Analyze(Stage):
         LOGGER.info(self.code + ': watershed thresholding done!')
 
         # new addition: remove any gigantic blobs that probably are not PVS
-        frangi_blobremoval = os.path.join(self.working_dir,self.code + '-frangimask-blobremoval.nii.gz')
-        unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs.nii.gz')
+        frangi_blobremoval = os.path.join(self.working_dir,self.code + '-frangimask-blobremoval-' + region + '.nii.gz')
+        unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs-' + region + '.nii.gz')
         cmd_compblob = f'MaskComponents --input {frangi_watershed} --minvoxels {500} --output {unwantedblobs}'
         self.commands.qit(cmd_compblob)
         cmd_removeblob = f'MaskSet --input {frangi_watershed} --mask {unwantedblobs} --label {0} --output {frangi_blobremoval}'
         self.commands.qit(cmd_removeblob)
 
         # new addition: remove anything that is 5 vx (inspo: Schwartz et al )
-        noise = os.path.join(self.working_dir, self.code + '-frangimask-removenoise.nii.gz')
+        noise = os.path.join(self.working_dir, self.code + '-frangimask-removenoise-' + region + '.nii.gz')
         cmd_compnoise = f'MaskComponents --input {frangi_blobremoval} --minvoxels {5} --output {noise}'
         self.commands.qit(cmd_compnoise)
         cmd_removenoise = f'MaskBinarize --input {noise} --output {noise}'
