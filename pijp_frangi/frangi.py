@@ -68,10 +68,10 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii')
+        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii.gz')
         self.gmmask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
-        self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask_thresh.nii')
-        self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii')
+        self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask2.nii.gz')
+        self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii.gz')
 
         self.t1raw = os.path.join(self.working_dir, self.code + "-T1raw.nii.gz")
         self.flairT1 = os.path.join(self.working_dir, self.code + "-flairT1.nii.gz")
@@ -278,7 +278,7 @@ class Stage(BaseStep):
 
         if os.path.exists(flair_raw):
             self.make_wmhmask(self.t1, flair_raw)
-            #self.make_wmhmask2()   causing problems
+            self.make_wmhmask2()   # causing problems ?
         # if not os.path.exists(flair_raw):
         #     file1 = open(faulty_subject_list,'a')
         #     file1.write(self.code + ': missing raw flair \n')
@@ -450,27 +450,36 @@ exit;"""
         self.commands.matlab(matlab_script)
 
         wmhmask = os.path.join(wmhlesion_folder, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
-        shutil.copy(wmhmask, self.working_dir)
-        wmhmask_wdfold = os.path.join(self.working_dir, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
+        shutil.copy(wmhmask, self.wmhmask)
+        # 4/2/24: after viewing subject 003_S_4872y04, I think the WMH mask needs the intensity based measure added on
+        #         and also no more dilation (PVS next to WMH may get wiped)
 
-        cmd_dilate = f'MaskDilate --input {wmhmask_wdfold} --num {1} --element {"cross"} --output {self.wmhmask}'
-        self.commands.qit(cmd_dilate)
+        # shutil.copy(wmhmask, self.working_dir)
+        # wmhmask_wdfold = os.path.join(self.working_dir, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
+
+
+        # cmd_dilate = f'MaskDilate --input {wmhmask_wdfold} --num {1} --element {"cross"} --output {self.wmhmask}'
+        # self.commands.qit(cmd_dilate)
 
         LOGGER.info(self.code + ': wmhmasks done!')
 
     def make_wmhmask2(self):
-        """Secondary WMH mask that is only based on an intensity threshold. Adds to the existing LST produced WMH mask. Currently testing: 12/4/23. Not in use: 1/25/24"""
+        """Secondary WMH mask that is only based on an intensity threshold. Adds to the existing LST produced WMH mask. Currently testing: 12/4/23. Not in use: 1/25/24.
+            Back in use: 4/2/24"""
 
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
-        flair_bcreg = os.path.join(self.working_dir, wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
+        flairinlesion = os.path.join(wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
+        flair = os.path.join(self.working_dir, self.code + "_FLAIRbcreg.nii.gz")
+        shutil.copy(flairinlesion,flair)
+
         flair_stats = os.path.join(self.working_dir, self.code + '-flairstats.csv')
-        cmd_measure = f'VolumeMeasure --input {flair_bcreg} --mask {self.allmask}  --output {flair_stats}'
+        cmd_measure = f'VolumeMeasure --input {flair} --mask {self.allmask}  --output {flair_stats}'
         self.commands.qit(cmd_measure)
 
         flair_csv = pd.read_csv(flair_stats, index_col=0)
         max_perc = flair_csv.loc['max'][0] * 0.7
 
-        cmd_threshold = f'VolumeThreshold --input {flair_bcreg} --mask {self.allmask} --threshold {max_perc} --magnitude --output {self.wmhmask2}'
+        cmd_threshold = f'VolumeThreshold --input {flair} --mask {self.allmask} --threshold {max_perc} --magnitude --output {self.wmhmask2}'
         self.commands.qit(cmd_threshold)
 
         #optional
@@ -601,7 +610,7 @@ class Analyze(Stage):
         # frangi filter processing for regular
         if os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.wmhmask)
+            self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.total_wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
             # frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
             # self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
@@ -878,7 +887,7 @@ class Analyze(Stage):
         gmvol_normed = gmvol / self.icv
 
         wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
-        cmd_bin = f'MaskBinarize --input {self.wmhmask} --output {self.wmhmask}'
+        cmd_bin = f'MaskBinarize --input {self.wmhmask} --output {self.total_wmhmask}'
         self.commands.qit(cmd_bin)
         cmd_maskmeas = f'MaskMeasure --input {self.wmhmask} --output {wmh_vol}'
         self.commands.qit(cmd_maskmeas)
