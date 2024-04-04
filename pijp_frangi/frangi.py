@@ -279,12 +279,12 @@ class Stage(BaseStep):
         if os.path.exists(flair_raw):
             self.make_wmhmask(self.t1, flair_raw)
             self.make_wmhmask2()   # causing problems ?
-        # if not os.path.exists(flair_raw):
-        #     file1 = open(faulty_subject_list,'a')
-        #     file1.write(self.code + ': missing raw flair \n')
-        #     file1.close()
-        #     #raise ProcessingError("FLAIR nifti is missing from `Raw`")
-        #     LOGGER.info("FLAIR nifti is missing from `Raw`")
+        if not os.path.exists(flair_raw):
+            file1 = open(faulty_subject_list,'a')
+            file1.write(self.code + ': missing raw flair \n')
+            file1.close()
+            #raise ProcessingError("FLAIR nifti is missing from `Raw`")
+            LOGGER.info("FLAIR nifti is missing from `Raw`")
 
         if os.path.exists(t1_raw):
             self.process_raw(t1_raw,self.t1,1,2)
