@@ -250,7 +250,6 @@ class Stage(BaseStep):
             LOGGER.info("Found more than 1 FLAIR")
             # raise ProcessingError("Found more than 1 FLAIR.")
 
-
         t1mgz = os.path.join(self.mrifolder, 'T1.mgz')
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
@@ -277,8 +276,8 @@ class Stage(BaseStep):
         self.make_allmask()
 
         if os.path.exists(flair_raw):
-            self.make_wmhmask(self.t1, flair_raw)
-            self.make_wmhmask2()   # causing problems ?
+            self.make_wmhmask(self.t1, flair_raw)   # sometimes this doesn't produce a WMH at all even though there are WMH
+            self.make_wmhmask2()   # this threshold relies too much on the intensity range (sometimes too much sometimes to little)
         if not os.path.exists(flair_raw):
             file1 = open(faulty_subject_list,'a')
             file1.write(self.code + ': missing raw flair \n')
@@ -286,14 +285,16 @@ class Stage(BaseStep):
             #raise ProcessingError("FLAIR nifti is missing from `Raw`")
             LOGGER.info("FLAIR nifti is missing from `Raw`")
 
-        if os.path.exists(t1_raw):
-            self.process_raw(t1_raw,self.t1,1,2)
-        if not os.path.exists(t1_raw):
-            file1 = open(faulty_subject_list,'a')
-            file1.write(self.code + ': missing raw T1 \n')
-            file1.close()
-            #raise ProcessingError("T1 nifti is missing from `Raw`")
-            LOGGER.info("T1 nifti is missing from `Raw`")
+        # # skipping raw for now to save time
+            
+        # if os.path.exists(t1_raw):
+        #     self.process_raw(t1_raw,self.t1,1,2)
+        # if not os.path.exists(t1_raw):
+        #     file1 = open(faulty_subject_list,'a')
+        #     file1.write(self.code + ': missing raw T1 \n')
+        #     file1.close()
+        #     #raise ProcessingError("T1 nifti is missing from `Raw`")
+        #     LOGGER.info("T1 nifti is missing from `Raw`")
 
         # running: flairT1
         # 4/2/24: not running at the moment, only running simplest parts
@@ -477,7 +478,7 @@ exit;"""
         self.commands.qit(cmd_measure)
 
         flair_csv = pd.read_csv(flair_stats, index_col=0)
-        max_perc = flair_csv.loc['max'][0] * 0.7
+        max_perc = flair_csv.loc['max'][0] * 0.8
 
         cmd_threshold = f'VolumeThreshold --input {flair} --mask {self.allmask} --threshold {max_perc} --magnitude --output {self.wmhmask2}'
         self.commands.qit(cmd_threshold)
@@ -611,7 +612,7 @@ class Analyze(Stage):
  
         # frangi filter processing for regular
         if os.path.exists(self.total_wmhmask):
-            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wmhrem.nii.gz")
+            frangimask_all = os.path.join(self.working_dir, self.code + "-finalPVSmask-wmhrem.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.total_wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
             # frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
@@ -620,7 +621,7 @@ class Analyze(Stage):
             raw = 'no'
             WMHstatus = 'yes'
         else:
-            frangimask_all = os.path.join(self.working_dir, self.code + "-frangi-thresholded.nii.gz")
+            frangimask_all = os.path.join(self.working_dir, self.code + "-finalPVSmask.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
             # frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm.nii.gz")
@@ -796,7 +797,7 @@ class Analyze(Stage):
         # self.commands.qit(cmd_threshold)
         
         # new addition: watershed thresholding
-        frangi_watershed = os.path.join(self.working_dir,self.code + '-frangimask-watershed-' + region + '.nii.gz')
+        frangi_watershed = os.path.join(self.working_dir,self.code + '-fm-wtrsd-' + region + '.nii.gz')
 
         img = nib.load(frangi_mask)
         imgdata = img.get_fdata()
@@ -813,29 +814,31 @@ class Analyze(Stage):
 
         LOGGER.info(self.code + ': watershed thresholding done!')
 
+        # wmh removal
+        wmhremoved = os.path.join(self.working_dir,self.code + 'fm-wtrsd-wmhrem-' + region + '.nii.gz')
+        if wmhmask is not None:
+            cmd_removewmh = f'MaskSet --input {frangi_watershed} --mask {wmhmask} --label {0} --output {wmhremoved}'
+            self.commands.qit(cmd_removewmh)
+        else:
+            shutil.copy(frangi_watershed,wmhremoved)
+            LOGGER.info(self.code + ': oh no! WMH did not exist, skipped WMH subtraction in Frangi analysis')
+
         # new addition: remove any gigantic blobs that probably are not PVS
-        frangi_blobremoval = os.path.join(self.working_dir,self.code + '-frangimask-blobremoval-' + region + '.nii.gz')
+        frangi_blobremoval = os.path.join(self.working_dir,self.code + '-fm-blbr-' + region + '.nii.gz')
         unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs-' + region + '.nii.gz')
-        cmd_compblob = f'MaskComponents --input {frangi_watershed} --minvoxels {500} --output {unwantedblobs}'
+        cmd_compblob = f'MaskComponents --input {wmhremoved} --minvoxels {500} --output {unwantedblobs}'
         self.commands.qit(cmd_compblob)
-        cmd_removeblob = f'MaskSet --input {frangi_watershed} --mask {unwantedblobs} --label {0} --output {frangi_blobremoval}'
+        cmd_removeblob = f'MaskSet --input {wmhremoved} --mask {unwantedblobs} --label {0} --output {frangi_blobremoval}'
         self.commands.qit(cmd_removeblob)
 
         # new addition: remove anything that is 5 vx (inspo: Schwartz et al )
-        noise = os.path.join(self.working_dir, self.code + '-frangimask-removenoise-' + region + '.nii.gz')
+        noise = os.path.join(self.working_dir, self.code + '-fm-dn' + region + '.nii.gz')
         cmd_compnoise = f'MaskComponents --input {frangi_blobremoval} --minvoxels {5} --output {noise}'
         self.commands.qit(cmd_compnoise)
-        cmd_removenoise = f'MaskBinarize --input {noise} --output {noise}'
+        cmd_removenoise = f'MaskBinarize --input {noise} --output {output}'
         self.commands.qit(cmd_removenoise)
 
-        # wmh removal
-        if wmhmask is not None:
-            cmd_removewmh = f'MaskSet --input {noise} --mask {wmhmask} --label {0} --output {output}'
-            self.commands.qit(cmd_removewmh)
-        else:
-            shutil.copy(noise,output)
-            LOGGER.info(self.code + ': oh no! WMH did not exist, skipped WMH subtraction in Frangi analysis')
-
+        
         LOGGER.info(self.code + ': cleaned up frangi mask!')
 
         LOGGER.info(self.code + ': frangi analysis done! almost there :)')

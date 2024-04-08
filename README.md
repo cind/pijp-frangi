@@ -18,15 +18,20 @@ Stage:
     - v.1: Mask is then dilated by 1 with cross shape
     - v.2: Threshold FLAIR image to 70% and add this thresholded mask to the WMH mask produced in v.1
     - (latest recommendation is to use just v.1. If v.2, have to run both functions (v.1, v.2))
+    - ***new addition***: change threshold from .7 to .8, still have to decide whether to keep both or dump v.1
+- make flair+t1 image ***added 3/5/34***
 
 Analyze:
 - run frangi filter with default recommended parameters (threshold at 0.0002 (.0004 for RAW), close to Sepehrband et al 2021), removing WMH with WMH mask if it exists ***change from 0.0002 to 0.00002 and 0.00004 2/26/24***
+- watershed for threshold instead of raw intensity threshold ***added 3/1/24***
+- remove WMH mask
 - remove blobs that are likely too big to be PVS (needs to be checked) ***added 1/4/24***
-- remove anything that is 3 voxels (noise) ***added 2/26/24***
-- calculate with aseg.stats
+- remove anything that is 4 voxels (noise) ***added 2/26/24***
+- calculate ICV with aseg.stats
 - run frangi filter with just white matter mask and default parameters (threshold is the same as above), removing WMH with WMH mask if it exists
 - calculate the mask components (using connected components analysis) then measure how many components there are and how large the components are (gets volume and count)
 - put all PVS stats into a csv for each subject, stored in subject folder
+- calculate WMH volume, WM volume, GM volume, and everything ICV normalized ***added 3/1/34***
 - put subject info into grand report 
 
 
