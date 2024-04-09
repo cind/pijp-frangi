@@ -615,7 +615,7 @@ class Analyze(Stage):
         # # 4/2/24: running the simplest atm (no white matter calculation, no flair+t1)
  
         # frangi filter processing for regular
-        if os.path.exists(self.total_wmhmask):
+        if os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-finalPVSmask-wmhrem.nii.gz")
             self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
