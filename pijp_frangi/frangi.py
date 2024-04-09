@@ -607,7 +607,7 @@ class Analyze(Stage):
         subject = self.code
         researchgroup = self.researchgroup
         self.icv_calc(self.asegstats)
-        wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv = self.structural_volume_measure(self.wmmask,self.gmmask,self.total_wmhmask)
+        wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv = self.structural_volume_measure(self.wmmask,self.gmmask,self.wmhmask)
 
         #########-------------For Grand PVS report--------------#########
         ## right now the thresholds don't mean anything
@@ -617,7 +617,7 @@ class Analyze(Stage):
         # frangi filter processing for regular
         if os.path.exists(self.total_wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-finalPVSmask-wmhrem.nii.gz")
-            self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.total_wmhmask)
+            self.frangi_analysis(self.t1, self.allmask, 0.00002, frangimask_all, wmhmask = self.wmhmask)
             count_all, vol_all, icv_all = self.pvs_stats(frangimask_all,self.comp,self.pvsstats)
             # frangimask_wm = os.path.join(self.working_dir, self.code + "-frangi-thresholded-wm-wmhrem.nii.gz")
             # self.frangi_analysis(self.t1, self.wmmask, 0.00002, frangimask_wm, region = 'wm',wmhmask = self.wmhmask)
