@@ -277,7 +277,9 @@ class Stage(BaseStep):
 
         if os.path.exists(flair_raw):
             self.make_wmhmask(self.t1, flair_raw)   # sometimes this doesn't produce a WMH at all even though there are WMH
-            self.make_wmhmask2()   # this threshold relies too much on the intensity range (sometimes too much sometimes to little)
+            # self.make_wmhmask2()   # this threshold relies too much on the intensity range (sometimes too much sometimes to little)
+                                    #  would need to normalize the flair images if I use this
+                                    # but it is more accurate than the above
         if not os.path.exists(flair_raw):
             file1 = open(faulty_subject_list,'a')
             file1.write(self.code + ': missing raw flair \n')
@@ -466,7 +468,9 @@ exit;"""
 
     def make_wmhmask2(self):
         """Secondary WMH mask that is only based on an intensity threshold. Adds to the existing LST produced WMH mask. Currently testing: 12/4/23. Not in use: 1/25/24.
-            Back in use: 4/2/24"""
+            Back in use: 4/2/24
+            Stopped: 4/8/24 - decided that even though this captures the details of WMH the other one captures overall WMH better
+                                In general, we will be trading off more PVS / less PVS estimate (using this function only = more PVS estimate generally)"""
 
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         flairinlesion = os.path.join(wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
