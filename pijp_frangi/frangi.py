@@ -199,8 +199,10 @@ class Commands(BaseStep):
         )
 
         output, error = proc.communicate()
-        LOGGER.error(error)
         LOGGER.info(output)
+
+        if error is not None or len(error) > 0:
+            LOGGER.error(error)
 
         if proc.returncode != 0:
             error = error.decode('ascii', errors='ignore')
@@ -657,7 +659,6 @@ class Analyze(Stage):
         df_cleaned.drop_duplicates(subset='subjects',keep='last',inplace=True)
         df_cleaned.to_csv(datatable,index=False)
 
-
         ##### dropping the RAW calculation and the FLAIR+T1 calculations for now to make things go faster
 
         # #########-------------For Grand PVS report RAW--------------#########
@@ -748,10 +749,6 @@ class Analyze(Stage):
         # df_cleaned_FT1 = df_data_FT1
         # df_cleaned_FT1.drop_duplicates(subset='subjects',keep='last',inplace=True)
         # df_cleaned_FT1.to_csv(datatable_FT1,index=False)
-
-
-
-
 
     def frangi_analysis(self, t1, mask, threshold, output, region='all', wmhmask=None, imagetype='T1'):
 
@@ -862,13 +859,11 @@ class Analyze(Stage):
 
         return count, vol, icv_normed
 
-################----------------functions for stats---------------################
     def icv_calc(self, asegstats):
         stat = pd.read_csv(asegstats)
         self.icv = stat['EstimatedTotalIntraCranialVol'][0]
 
         LOGGER.info(self.code + ': icv calc done! ')
-
 
     def structural_volume_measure(self,wmmask,gmmask,wmhmask):
         wm_vol = os.path.join(self.working_dir,self.code + '-wmvol.csv')
