@@ -288,7 +288,7 @@ class Stage(BaseStep):
             LOGGER.info("FLAIR nifti is missing from `Raw`")
 
         # # skipping raw for now to save time
-            
+
         # if os.path.exists(t1_raw):
         #     self.process_raw(t1_raw,self.t1,1,2)
         # if not os.path.exists(t1_raw):
@@ -303,8 +303,6 @@ class Stage(BaseStep):
         # if os.path.exists(flair_raw):
         #     self.make_flairt1(self.flairT1)
 
-
-    ####---some basic processing functions---#####
     def aseg_convert(self, aseg_raw):
         cmd = f'asegstats2table -i {aseg_raw} -d comma -t {self.asegstats}'
         self.commands.fs(cmd)
@@ -330,8 +328,6 @@ class Stage(BaseStep):
         cmd = f'DenoiseImage -i {input} -n {noise} -p {p} -r {s} -o {output}'
         self.commands.ants(cmd)
 
-
-    # ####----doing things functions---####
     def process_raw(self,rawt1,t1,p,s):
         # for now, assume registration to the relevant t1
         #shutil.copy(rawt1, self.working_dir)
@@ -494,7 +490,6 @@ exit;"""
 
         LOGGER.info(self.code + ': wmhmasks total done!')
 
-    # new addition: flair+t1
     def make_flairt1(self,output):
         """New Addition 3/1/24: adding FLAIR and T1 together to make a FLAIR+T1 image. Final image is also denoised. Experimental."""
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
@@ -515,7 +510,6 @@ exit;"""
         self.commands.fsl(reg_cmd)
 
         LOGGER.info(self.code + ': make flair+t1 done!')
-
 
     def _parse_args(self, args):
         """
@@ -613,7 +607,7 @@ class Analyze(Stage):
         ## right now the thresholds don't mean anything
 
         # # 4/2/24: running the simplest atm (no white matter calculation, no flair+t1)
- 
+
         # frangi filter processing for regular
         if os.path.exists(self.wmhmask):
             frangimask_all = os.path.join(self.working_dir, self.code + "-finalPVSmask-wmhrem.nii.gz")
@@ -650,7 +644,7 @@ class Analyze(Stage):
         else:
             df_empty.to_csv(datatable,index=False)
             df_data = pd.read_csv(datatable)
-            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, 
+            newsubject = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all,
                                             #  count_allwm, vol_allwm, icv_allwm, \
                                              wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
             df_data = df_data.append(newsubject)
@@ -701,7 +695,7 @@ class Analyze(Stage):
         #     newsubject_raw = pd.DataFrame(data=[[subject, researchgroup, count_all, vol_all, icv_all, count_allwm, vol_allwm, icv_allwm, \
         #                                          wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv, raw, WMHstatus]],columns=col)
         #     df_data_raw = df_data_raw.append(newsubject_raw)
-        
+
         # # clean any duplicates
         # df_cleaned_raw = df_data_raw
         # df_cleaned_raw.drop_duplicates(subset='subjects',keep='last',inplace=True)
@@ -748,14 +742,14 @@ class Analyze(Stage):
 
         # # for individual report
         # newsubject_FT1.to_csv(os.path.join(self.working_dir, self.code+'_report_FLAIRT1.csv'), index=False)
-        
+
         # #for grand report
         # # clean any duplicates
         # df_cleaned_FT1 = df_data_FT1
         # df_cleaned_FT1.drop_duplicates(subset='subjects',keep='last',inplace=True)
         # df_cleaned_FT1.to_csv(datatable_FT1,index=False)
 
-    
+
 
 
 
@@ -784,22 +778,22 @@ class Analyze(Stage):
         self.commands.qit(cmd_frangi)
 
         LOGGER.info(self.code + ': frangi mask done!')
-        
+
         # possible thresholds:
             # default (1 size fits all)
             # regional (1 threshold per region)
             # percentage (threshold is dependent on frangi mask value range)
             # dynamic (watershed)
-        
+
         # other cleaning:
             # wmh removal
             # noise removal
             # binarize
-        
+
         # old threshold method
         # cmd_threshold = f'VolumeThreshold --input {frangi_mask} --mask {mask} --threshold {threshold} --output {output}'
         # self.commands.qit(cmd_threshold)
-        
+
         # new addition: watershed thresholding
         frangi_watershed = os.path.join(self.working_dir,self.code + '-fm-wtrsd-' + region + '.nii.gz')
 
@@ -842,7 +836,7 @@ class Analyze(Stage):
         cmd_removenoise = f'MaskBinarize --input {noise} --output {output}'
         self.commands.qit(cmd_removenoise)
 
-        
+
         LOGGER.info(self.code + ': cleaned up frangi mask!')
 
         LOGGER.info(self.code + ': frangi analysis done! almost there :)')
@@ -867,15 +861,15 @@ class Analyze(Stage):
         LOGGER.info(self.code + ': pvs stats done!')
 
         return count, vol, icv_normed
-    
+
 ################----------------functions for stats---------------################
     def icv_calc(self, asegstats):
         stat = pd.read_csv(asegstats)
         self.icv = stat['EstimatedTotalIntraCranialVol'][0]
 
         LOGGER.info(self.code + ': icv calc done! ')
-        
-    
+
+
     def structural_volume_measure(self,wmmask,gmmask,wmhmask):
         wm_vol = os.path.join(self.working_dir,self.code + '-wmvol.csv')
         cmd_bin = f'MaskBinarize --input {wmmask} --output {wmmask}'
@@ -903,7 +897,7 @@ class Analyze(Stage):
         wmhstats = pd.read_csv(wmh_vol,index_col=0)
         wmhvol = wmhstats.loc['volume'][0]
         wmhvol_normed = wmhvol / self.icv
-    
+
         icv = self.icv
 
         return wmvol, wmvol_normed, gmvol, gmvol_normed, wmhvol, wmhvol_normed, icv
