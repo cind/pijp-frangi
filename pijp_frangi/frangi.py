@@ -206,7 +206,7 @@ class Commands(BaseStep):
 
         if proc.returncode != 0:
             error = error.decode('ascii', errors='ignore')
-            raise Exception('MATLAB FAILURE. Error:\n' + error)
+            raise ProcessingError('MATLAB FAILURE. Error:\n' + error)
 
 
 class Stage(BaseStep):
