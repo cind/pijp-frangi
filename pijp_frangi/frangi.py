@@ -201,9 +201,6 @@ class Commands(BaseStep):
         output, error = proc.communicate()
         LOGGER.info(output)
 
-        if error is not None or len(error) > 0:
-            LOGGER.error(error)
-
         if proc.returncode != 0:
             error = error.decode('ascii', errors='ignore')
             raise ProcessingError('MATLAB FAILURE. Error:\n' + error)
