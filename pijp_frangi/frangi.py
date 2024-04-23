@@ -553,6 +553,7 @@ exit;"""
 
         attempted_rows = ProcessingLog().get_step_attempted(project_name, PROCESS_TITLE, 'stage')
         attempted = [row[1] for row in attempted_rows]
+        print(attempted)
 
         #  Codes not initiated.
         todo_codes = [ {"code":row['Code'], "rg":row["ResearchGroup"]} for row in all_codes if row['Code'] not in attempted]
