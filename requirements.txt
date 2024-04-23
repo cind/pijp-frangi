@@ -3,4 +3,5 @@ pandas
 scipy
 matplotlib
 nibabel
+scikit-image
 
