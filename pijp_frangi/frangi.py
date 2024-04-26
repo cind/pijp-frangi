@@ -125,9 +125,6 @@ class BaseStep(Step):
         if len(output) > 0:
             LOGGER.debug(output)
 
-        if len(error) > 0 and p.returncode == 0:
-            LOGGER.warning(error)
-
         if p.returncode != 0:
             LOGGER.error(output)
             LOGGER.error(error)
