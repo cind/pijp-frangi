@@ -415,13 +415,14 @@ class Stage(BaseStep):
 
         # To set the HTML report option to False, we also need to pass
         # in all the other args. We use the default for Kappa, MRF and Max
-        # iterations as taken from the documentation.
+        # NOTE: There's a gotcha here with the order of args. `ps_LST_lga.m` help
+        # has the order wrong. See the `nargs` logic on lines 120-150.
         wmh_cmd = f"""
 try
     addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
     addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
     spm_jobman('initcfg');
-    ps_LST_lga('{unzipped_t1}','{unzipped_flair}', 0.3, 1, 50, 0);
+    ps_LST_lga('{unzipped_t1}','{unzipped_flair}', 0.3, 50, 1.0, 0);
 catch ME
     report = ME.getReport;
     fprintf(2, report);
