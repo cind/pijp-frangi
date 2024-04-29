@@ -221,49 +221,39 @@ class Stage(BaseStep):
 
     def run(self):
         rg = repo.Repository(self.project).get_researchgroup(self.code)
-        #LOGGER.debug(f"Research Group {rg}")
+        LOGGER.info(f"Research Group {rg}")
 
         flair_check = repo.Repository(self.project).get_imagetype(self.scan_code,'FLAIR')
-        #LOGGER.debug(f"FLAIR check {flair_check[0]['Code']}")
+        LOGGER.debug(f"FLAIR check {flair_check}")
 
         if len(rg) == 0:
             raise ProcessingError("No Research Group found.")
 
-        # this will just catch if the flair doesn't exst; should probably move the file statements here
-        # otherwise if the flair doesn't exist it will immediately throw an index out of bounds error
-        # so need to check the length before indexing it
-
         if len(flair_check) == 0:
-            file1 = open(faulty_subject_list,'a')
-            file1.write(self.code + ': missing raw flair \n')
-            file1.close()
+            self.comments += "Missing raw FLAIR."
             LOGGER.info("FLAIR nifti is missing from `Raw`")
-            # raise ProcessingError("No FLAIR found.")
+            flair_raw = None
+
         elif len(flair_check) > 1:
-            file1 = open(faulty_subject_list,'a')
-            file1.write(self.code + ': found more than 1 flair \n')
-            file1.close()
+            self.comments += "Found more than one FLAIR."
             LOGGER.info("Found more than 1 FLAIR")
-            # raise ProcessingError("Found more than 1 FLAIR.")
+            flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
+
+        else:
+            flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
 
         t1mgz = os.path.join(self.mrifolder, 'T1.mgz')
         wmparcmgz = os.path.join(self.mrifolder, 'wmparc.mgz')
         maskmgz = os.path.join(self.mrifolder, 'aparc+aseg.mgz')
         asegstats = os.path.join(self.statsfolder, 'aseg.stats')
 
-        faulty_subject_list = os.path.join(self.proj_root,'faulty_subjects.csv')
-
-        flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
-
         t1_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, self.code + '.T1.nii.gz')
 
         if os.path.exists(t1mgz):
             self.mgz_convert(t1mgz, self.t1)
-        if not os.path.exists(t1mgz):
-            file1 = open(faulty_subject_list,'a')
-            file1.write(self.code + ': missing FSdn T1 \n')
-            file1.close()
-            #raise ProcessingError("T1 nifti is missing from `Raw`")
+
+        else:
+            self.comments += "T1 nifti is missing from ADNI3_FSdn"
             LOGGER.info("T1 nifti is missing from `ADNI3_FSdn`")
 
         self.aseg_convert(asegstats)
@@ -271,17 +261,13 @@ class Stage(BaseStep):
         self.make_greymask(maskmgz)
         self.make_allmask()
 
-        if os.path.exists(flair_raw):
-            self.make_wmhmask(self.t1, flair_raw)   # sometimes this doesn't produce a WMH at all even though there are WMH
-            # self.make_wmhmask2()   # this threshold relies too much on the intensity range (sometimes too much sometimes to little)
-                                    #  would need to normalize the flair images if I use this
-                                    # but it is more accurate than the above
-        if not os.path.exists(flair_raw):
-            file1 = open(faulty_subject_list,'a')
-            file1.write(self.code + ': missing raw flair \n')
-            file1.close()
-            #raise ProcessingError("FLAIR nifti is missing from `Raw`")
-            LOGGER.info("FLAIR nifti is missing from `Raw`")
+        if os.path.exists(flair_raw) and flair_raw is not None:
+            self.make_wmhmask(self.t1, flair_raw)
+            # sometimes this doesn't produce a WMH at all even though there are
+            # WMH self.make_wmhmask2() this threshold relies too much on
+            # the intensity range (sometimes too much sometimes to little)
+            # would need to normalize the flair images if I use this but it is
+            # more accurate than the above
 
         # # skipping raw for now to save time
 
