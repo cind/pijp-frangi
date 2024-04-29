@@ -68,7 +68,7 @@ class BaseStep(Step):
         self.wmmask = os.path.join(self.working_dir, self.code + "-wmmask.nii.gz")
         self.asegstats = os.path.join(self.working_dir, self.code + "-asegstats.csv")
         self.flair = os.path.join(self.working_dir, self.code + "-FLAIR.nii.gz")
-        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii.gz')
+        self.wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask.nii')
         self.gmmask = os.path.join(self.working_dir, self.code + "-gmmask.nii.gz")
         self.wmhmask2 = os.path.join(self.working_dir, self.code + '-wmhmask2.nii.gz')
         self.total_wmhmask = os.path.join(self.working_dir, self.code + '-wmhmask_total.nii.gz')
