@@ -427,12 +427,15 @@ class Stage(BaseStep):
             with open(unzipped_t1, 'wb') as f_out:
                 shutil.copyfileobj(f_in, f_out)
 
+        # To set the HTML report option to False, we also need to pass
+        # in all the other args. We use the default for Kappa, MRF and Max
+        # iterations as taken from the documentation.
         wmh_cmd = f"""
 try
     addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
     addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
     spm_jobman('initcfg');
-    ps_LST_lga('{unzipped_t1}','{unzipped_flair}');
+    ps_LST_lga('{unzipped_t1}','{unzipped_flair}', 0.3, 1, 50, 0);
 catch ME
     report = ME.getReport;
     fprintf(2, report);
