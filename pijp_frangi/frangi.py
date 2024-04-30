@@ -230,12 +230,12 @@ class Stage(BaseStep):
             raise ProcessingError("No Research Group found.")
 
         if len(flair_check) == 0:
-            self.comments += "Missing raw FLAIR."
+            self.comments = "Missing raw FLAIR."
             LOGGER.info("FLAIR nifti is missing from `Raw`")
             flair_raw = None
 
         elif len(flair_check) > 1:
-            self.comments += "Found more than one FLAIR."
+            self.comments = "Found more than one FLAIR."
             LOGGER.info("Found more than 1 FLAIR")
             flair_raw = os.path.join(self.proj_root, 'Raw', self.scan_code, flair_check[0]['Code'] + '.FLAIR.nii.gz')
 
@@ -253,7 +253,7 @@ class Stage(BaseStep):
             self.mgz_convert(t1mgz, self.t1)
 
         else:
-            self.comments += "T1 nifti is missing from ADNI3_FSdn"
+            self.comments = "T1 nifti is missing from ADNI3_FSdn"
             LOGGER.info("T1 nifti is missing from `ADNI3_FSdn`")
 
         self.aseg_convert(asegstats)
