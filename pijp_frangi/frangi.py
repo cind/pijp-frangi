@@ -868,15 +868,19 @@ class Analyze(Stage):
         gmstats = pd.read_csv(gm_vol,index_col=0)
         gmvol = gmstats.loc['volume'][0]
         gmvol_normed = gmvol / self.icv
-
-        wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
-        cmd_bin = f'MaskBinarize --input {wmhmask} --output {wmhmask}'
-        self.commands.qit(cmd_bin)
-        cmd_maskmeas = f'MaskMeasure --input {wmhmask} --output {wmh_vol}'
-        self.commands.qit(cmd_maskmeas)
-        wmhstats = pd.read_csv(wmh_vol,index_col=0)
-        wmhvol = wmhstats.loc['volume'][0]
-        wmhvol_normed = wmhvol / self.icv
+        
+        if os.path.exists(wmhmask):
+            wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
+            cmd_bin = f'MaskBinarize --input {wmhmask} --output {wmhmask}'
+            self.commands.qit(cmd_bin)
+            cmd_maskmeas = f'MaskMeasure --input {wmhmask} --output {wmh_vol}'
+            self.commands.qit(cmd_maskmeas)
+            wmhstats = pd.read_csv(wmh_vol,index_col=0)
+            wmhvol = wmhstats.loc['volume'][0]
+            wmhvol_normed = wmhvol / self.icv
+        else:
+            wmhvol = 0
+            wmhvol_normed = 0
 
         icv = self.icv
 
