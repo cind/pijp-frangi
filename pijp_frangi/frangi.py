@@ -261,7 +261,7 @@ class Stage(BaseStep):
         self.make_greymask(maskmgz)
         self.make_allmask()
 
-        if os.path.exists(flair_raw) and flair_raw is not None:
+        if flair_raw is not None and os.path.exists(flair_raw):
             self.make_wmhmask(self.t1, flair_raw)
             # sometimes this doesn't produce a WMH at all even though there are
             # WMH self.make_wmhmask2() this threshold relies too much on
