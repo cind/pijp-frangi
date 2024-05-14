@@ -476,6 +476,38 @@ exit;"""
 
         LOGGER.info(self.code + ': wmhmasks total done!')
 
+    def make_wmhmaskfs(self):
+        #new: added 05/13/24. segmentation of WMH using FS SAMSEG
+        # there may be a faster version of this, optimized for gpu ?
+        wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
+        flairinlesion = os.path.join(wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
+        flair = os.path.join(self.working_dir, self.code + "_FLAIRbcreg.nii.gz")
+        shutil.copy(flairinlesion,flair)
+        
+        samsegoutput = os.path.join(self.working_dir,'samsegoutput')
+        cmd_samseg = f'run_samseg --input {self.t1} {flair} --pallidum-separate --lesion --lesion-mask-pattern 0 1 --output {samsegoutput}'
+        self.commands.fs(cmd_samseg)
+
+        segmgz = os.path.join(self.working_dir,'samsegoutput','seg.mgz')
+        img = nib.load(segmgz)
+        data = img.get_fdata()
+        mask = np.zeros(np.shape(data))
+
+        seg = [99]
+
+        for m in seg:
+            mask[data == m] = m
+
+        maskimg = nib.Nifti1Image(mask, img.affine)
+        nib.save(maskimg, self.wmhmask)
+
+        cmd_binarize = f'MaskBinarize --input {self.wmhmask} --output {self.wmhmask}'
+        self.commands.qit(cmd_binarize)
+
+
+
+
+
     def make_flairt1(self,output):
         """New Addition 3/1/24: adding FLAIR and T1 together to make a FLAIR+T1 image. Final image is also denoised. Experimental."""
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
