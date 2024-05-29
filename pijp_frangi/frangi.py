@@ -261,13 +261,22 @@ class Stage(BaseStep):
         self.make_greymask(maskmgz)
         self.make_allmask()
 
+        # basically a secondary check I guess, since you check the existence of flair above
         if flair_raw is not None and os.path.exists(flair_raw):
-            self.make_wmhmask(self.t1, flair_raw)
+            # self.make_wmhmask(self.t1, flair_raw) # this is LST lga
             # sometimes this doesn't produce a WMH at all even though there are
             # WMH self.make_wmhmask2() this threshold relies too much on
             # the intensity range (sometimes too much sometimes to little)
             # would need to normalize the flair images if I use this but it is
             # more accurate than the above
+
+            # switching to FS version, SAMSEG
+            # self.process_flair(self.t1,flair_raw)
+            # self.make_wmhmaskfs()
+
+            # switching back to LST version, with LPA
+            self.make_wmhmask(self.t1, flair_raw)
+
 
         # # skipping raw for now to save time
 
@@ -381,6 +390,20 @@ class Stage(BaseStep):
 
         LOGGER.info(self.code + ': all mask done! ')
 
+    def process_flair(self,t1,input_flair):
+        # bias correct flair
+        flair_bc = os.path.join(self.working_dir, self.code + "_FLAIRbc.nii.gz")
+        biascorrect = f'N4BiasFieldCorrection -i {input_flair} -o {flair_bc}'
+        self.commands.ants(biascorrect)
+
+        #register flair
+        flair_reg = os.path.join(self.working_dir, self.code + "_FLAIRbcreg.nii.gz")
+        # NOTE: You may want to use a differnet cost function b/c these are different modalities.
+        # I think the default is correlation coeff.
+        register = f'flirt -in {flair_bc} -ref {t1} -out {flair_reg}'
+        self.commands.fsl(register)
+
+
     def make_wmhmask(self, t1, input_flair):
         """
         WMH removal
@@ -417,12 +440,16 @@ class Stage(BaseStep):
         # in all the other args. We use the default for Kappa, MRF and Max
         # NOTE: There's a gotcha here with the order of args. `ps_LST_lga.m` help
         # has the order wrong. See the `nargs` logic on lines 120-150.
+
+        ## I'm switching this to LPA bc it's faster and irdk what's going on with lga algorithm
+
+
         wmh_cmd = f"""
 try
     addpath('/opt/mathworks/MatlabToolkits/spm12_r7219');
     addpath('/opt/mathworks/MatlabToolkits/LST/3.0.0');
     spm_jobman('initcfg');
-    ps_LST_lga('{unzipped_t1}','{unzipped_flair}', 0.3, 50, 1.0, 0);
+    ps_LST_lpa('{unzipped_flair}','{unzipped_t1}');
 catch ME
     report = ME.getReport;
     fprintf(2, report);
@@ -434,7 +461,8 @@ exit;"""
         LOGGER.debug(f"MATLAB m file:{matlab_script}")
         self.commands.matlab(matlab_script)
 
-        wmhmask = os.path.join(wmhlesion_folder, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
+        # wmhmask = os.path.join(wmhlesion_folder, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
+        wmhmask = os.path.join(wmhlesion_folder, 'ples_lpa_mr' + self.code + '_FLAIRbcreg.nii')
         shutil.copy(wmhmask, self.wmhmask)
         # 4/2/24: after viewing subject 003_S_4872y04, I think the WMH mask needs the intensity based measure added on
         #         and also no more dilation (PVS next to WMH may get wiped)
@@ -442,6 +470,8 @@ exit;"""
         # shutil.copy(wmhmask, self.working_dir)
         # wmhmask_wdfold = os.path.join(self.working_dir, 'ples_lga_0.3_rm' + self.code + '_FLAIRbcreg.nii')
 
+        cmd_binarize = f'MaskBinarize --input {self.wmhmask} --output {self.wmhmask}'
+        self.commands.qit(cmd_binarize)
 
         # cmd_dilate = f'MaskDilate --input {wmhmask_wdfold} --num {1} --element {"cross"} --output {self.wmhmask}'
         # self.commands.qit(cmd_dilate)
@@ -479,10 +509,8 @@ exit;"""
     def make_wmhmaskfs(self):
         #new: added 05/13/24. segmentation of WMH using FS SAMSEG
         # there may be a faster version of this, optimized for gpu ?
-        wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
-        flairinlesion = os.path.join(wmhlesion_folder, self.code + "_FLAIRbcreg.nii.gz")
+        # wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         flair = os.path.join(self.working_dir, self.code + "_FLAIRbcreg.nii.gz")
-        shutil.copy(flairinlesion,flair)
         
         samsegoutput = os.path.join(self.working_dir,'samsegoutput')
         cmd_samseg = f'run_samseg --input {self.t1} {flair} --pallidum-separate --lesion --lesion-mask-pattern 0 1 --output {samsegoutput}'
