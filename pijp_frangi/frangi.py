@@ -251,10 +251,12 @@ class Stage(BaseStep):
 
         if os.path.exists(t1mgz):
             self.mgz_convert(t1mgz, self.t1)
-
         else:
             self.comments = "T1 nifti is missing from ADNI3_FSdn"
             LOGGER.info("T1 nifti is missing from `ADNI3_FSdn`")
+            file1 = open(os.path.join(self.proj_root,'faulty_subject_list.txt'),'a')
+            file1.write(self.code + ': T1 nifti is missing from ADNI3_FSdn \n')
+            file1.close()
 
         self.aseg_convert(asegstats)
         self.make_whitemask(wmparcmgz)
@@ -276,6 +278,11 @@ class Stage(BaseStep):
 
             # switching back to LST version, with LPA
             self.make_wmhmask(self.t1, flair_raw)
+
+        else:
+            file1 = open(os.path.join(self.proj_root,'faulty_subject_list.txt'),'a')
+            file1.write(self.code + ': FLAIR nifti is missing from `Raw` \n')
+            file1.close()
 
 
         # # skipping raw for now to save time
@@ -866,7 +873,7 @@ class Analyze(Stage):
         # new addition: remove any gigantic blobs that probably are not PVS
         frangi_blobremoval = os.path.join(self.working_dir,self.code + '-fm-blbr-' + region + '.nii.gz')
         unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs-' + region + '.nii.gz')
-        cmd_compblob = f'MaskComponents --input {wmhremoved} --minvoxels {500} --output {unwantedblobs}'
+        cmd_compblob = f'-'
         self.commands.qit(cmd_compblob)
         cmd_removeblob = f'MaskSet --input {wmhremoved} --mask {unwantedblobs} --label {0} --output {frangi_blobremoval}'
         self.commands.qit(cmd_removeblob)
@@ -889,7 +896,7 @@ class Analyze(Stage):
         self.commands.qit(cmd_comp)
 
         cmd_maskmeas = f'MaskMeasure --input {compname} --comps --counts --position --output {statsname}'
-        self.commands.qit(cmd_maskmeas)
+        self.commands.Mqit(cmd_maskmeas)
 
         pvsstats = pd.read_csv(statsname, index_col=0)
         count =  pvsstats.loc['component_count'][0]    # number of PVS counted
