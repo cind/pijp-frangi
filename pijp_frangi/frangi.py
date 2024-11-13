@@ -272,12 +272,12 @@ class Stage(BaseStep):
             # would need to normalize the flair images if I use this but it is
             # more accurate than the above
 
-            # switching to FS version, SAMSEG
-            # self.process_flair(self.t1,flair_raw)
-            # self.make_wmhmaskfs()
+            # switching to FS version, SAMSEG: switched back 7/7/24
+            self.process_flair(self.t1,flair_raw)
+            self.make_wmhmaskfs()
 
             # switching back to LST version, with LPA
-            self.make_wmhmask(self.t1, flair_raw)
+            # self.make_wmhmask(self.t1, flair_raw)
 
         else:
             file1 = open(os.path.join(self.proj_root,'faulty_subject_list.txt'),'a')
@@ -872,8 +872,8 @@ class Analyze(Stage):
 
         # new addition: remove any gigantic blobs that probably are not PVS
         frangi_blobremoval = os.path.join(self.working_dir,self.code + '-fm-blbr-' + region + '.nii.gz')
-        unwantedblobs = os.path.join(self.working_dir, self.code + 'unwantedfrangiblobs-' + region + '.nii.gz')
-        cmd_compblob = f'-'
+        unwantedblobs = os.path.join(self.working_dir, self.code + '_unwantedfrangiblobs-' + region + '.nii.gz')
+        cmd_compblob = f'MaskComponents --input {frangi_blobremoval} --minvoxels {200} --output {unwantedblobs}'
         self.commands.qit(cmd_compblob)
         cmd_removeblob = f'MaskSet --input {wmhremoved} --mask {unwantedblobs} --label {0} --output {frangi_blobremoval}'
         self.commands.qit(cmd_removeblob)
