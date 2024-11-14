@@ -896,7 +896,7 @@ class Analyze(Stage):
         self.commands.qit(cmd_comp)
 
         cmd_maskmeas = f'MaskMeasure --input {compname} --comps --counts --position --output {statsname}'
-        self.commands.Mqit(cmd_maskmeas)
+        self.commands.qit(cmd_maskmeas)
 
         pvsstats = pd.read_csv(statsname, index_col=0)
         count =  pvsstats.loc['component_count'][0]    # number of PVS counted
