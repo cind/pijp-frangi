@@ -413,7 +413,7 @@ class Stage(BaseStep):
 
     def make_wmhmask(self, t1, input_flair):
         """
-        WMH removal
+        WMH removal using LST: 
         """
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         os.makedirs(os.path.join(self.working_dir, 'wmhlesion'), exist_ok=True)
@@ -873,7 +873,7 @@ class Analyze(Stage):
         # new addition: remove any gigantic blobs that probably are not PVS
         frangi_blobremoval = os.path.join(self.working_dir,self.code + '-fm-blbr-' + region + '.nii.gz')
         unwantedblobs = os.path.join(self.working_dir, self.code + '_unwantedfrangiblobs-' + region + '.nii.gz')
-        cmd_compblob = f'MaskComponents --input {frangi_blobremoval} --minvoxels {200} --output {unwantedblobs}'
+        cmd_compblob = f'MaskComponents --input {wmhremoved} --minvoxels {200} --output {unwantedblobs}'
         self.commands.qit(cmd_compblob)
         cmd_removeblob = f'MaskSet --input {wmhremoved} --mask {unwantedblobs} --label {0} --output {frangi_blobremoval}'
         self.commands.qit(cmd_removeblob)
