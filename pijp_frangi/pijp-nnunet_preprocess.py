@@ -16,8 +16,9 @@ PROCESS_TITLE = 'nnunet_preprocess'
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
 
-def get_case_dir(project, code):
-    cdir = os.path.join(get_process_dir(project), code)
+def get_case_dir(project, research_group, subject):
+    """Create directory organized by research group and subject"""
+    cdir = os.path.join(get_process_dir(project), research_group, subject)
     if not os.path.isdir(cdir):
         os.makedirs(cdir)
     return cdir
@@ -28,22 +29,25 @@ class PreprocessSubject(Step):
     step_name = 'preprocess'
     step_cli = 'preprocess'
     cpu = 1
-    mem = '8G'  # Adjust as needed
+    mem = '8G'
     
     def __init__(self, project, code, args):
         super().__init__(project, code, args)
         self.datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
         self.project = project
-        self.code = code  # This will be your subject folder path
-        self.working_dir = get_case_dir(self.project, os.path.basename(code))
         
-        # Parse the research group and subject from the code
-        # Assuming code format: /path/to/ADNI3_preprocessed/EMCI/subject_001
-        parts = code.split('/')
+        # Parse the research group and subject from the code path
+        # code format: /path/to/ADNI3_preprocessed/EMCI/subject_001
+        parts = code.rstrip('/').split('/')
         self.research_group = parts[-2]  # e.g., 'EMCI'
         self.subject = parts[-1]  # e.g., 'subject_001'
         
+        # Use research_group_subject format for the code to avoid "/" in job names
+        self.code = f"{self.research_group}_{self.subject}"
+        
         self.subj_dir = code
+        self.working_dir = get_case_dir(self.project, self.research_group, self.subject)
+        
         self.output_folder = os.path.join(
             '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_preprocessed_clean',
             self.research_group,
@@ -96,10 +100,15 @@ class PreprocessSubject(Step):
         # Create output directory
         os.makedirs(self.output_folder, exist_ok=True)
         
+        # Get the full path to the preprocessing script
+        # Assumes it's in the same directory as this script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        preprocess_script = os.path.join(script_dir, 'grid_nnunet_preprocessing.py')
+        
         # Run your preprocessing Python script
         cmd = [
             'python',
-            'grid_nnunet_preprocessing.py',  # Make sure this is in your PATH or use full path
+            preprocess_script,
             '--subj_dir', self.subj_dir,
             '--subject', self.subject,
             '--output_folder', self.output_folder
@@ -113,7 +122,8 @@ class PreprocessSubject(Step):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 encoding='utf-8',
-                check=True
+                check=True,
+                cwd=script_dir  # Run from script directory
             )
             
             if result.stdout:
