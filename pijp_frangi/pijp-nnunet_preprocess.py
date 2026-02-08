@@ -35,13 +35,22 @@ class PreprocessSubject(Step):
         super().__init__(project, code, args)
         self.datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
         self.project = project
-        
+    
+        LOGGER.info(f"Received code: {code}")
+
         # Parse the research group and subject from the code path
         # code format: /path/to/ADNI3_preprocessed/EMCI/subject_001
         parts = code.rstrip('/').split('/')
+
+            # Debug: print parts
+        LOGGER.info(f"Path parts: {parts}")
+        LOGGER.info(f"Number of parts: {len(parts)}")
+
         self.research_group = parts[-2]  # e.g., 'EMCI'
         self.subject = parts[-1]  # e.g., 'subject_001'
         
+        LOGGER.info(f"Extracted research_group: {self.research_group}, subject: {self.subject}")
+
         # Use research_group_subject format for the code to avoid "/" in job names
         self.code = f"{self.research_group}_{self.subject}"
         
