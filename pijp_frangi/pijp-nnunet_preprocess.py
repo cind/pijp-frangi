@@ -56,7 +56,7 @@ class PreprocessSubject(Step):
         Build the queue of all subjects to process.
         Returns a list of dicts with ProjectName and Code (subject path).
         """
-        parent_dir = '/m/Researchers/S/deeppvs/for_nnunet/ADNI3_preprocessed'
+        parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_preprocessed'
         dx_names = ['EMCI', 'AD', 'MCI', 'CN', 'LMCI', 'SMC']
         
         # Get already attempted subjects
