@@ -149,6 +149,10 @@ class PreprocessSubject(Step):
         """
         Main processing entry point.
         """
+        os.environ['FSVERSION'] = '7.4.1'
+        os.environ['ANTSVERSION'] = 'ants-2.5.0'
+        os.environ['FSLVERSION'] = '6.0.0'
+        
         LOGGER.info(f"Processing subject: {self.subject} from group: {self.research_group}")
         LOGGER.info(f"Subject directory: {self.subj_dir}")
         LOGGER.info(f"Output folder: {self.output_folder}")
