@@ -40,10 +40,27 @@ class PreprocessSubject(Step):
             research_group = parts[-2]
             subject = parts[-1]
         else:
-            # Fallback if only subject name is passed
-            safe_code = code
-            research_group = "UNKNOWN"
+            # # Fallback if only subject name is passed
+            # safe_code = code
+            # research_group = "UNKNOWN"
+            # subject = code
             subject = code
+        
+            # Try to find research group from any existing logs or directories
+            # For now, we'll need to search for this subject across all groups
+            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_preprocessed'
+            dx_names = ['EMCI', 'AD', 'MCI', 'CN', 'LMCI', 'SMC']
+            
+            research_group = None
+            for group in dx_names:
+                potential_path = os.path.join(parent_dir, group, subject)
+                if os.path.isdir(potential_path):
+                    research_group = group
+                    break
+            
+            if research_group is None:
+                research_group = "UNKNOWN"
+                LOGGER.warning(f"Could not find research group for subject {subject}")
 
 
         super().__init__(project, code, args)
