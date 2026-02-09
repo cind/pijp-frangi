@@ -162,14 +162,16 @@ class PreprocessSubject(Step):
         preprocess_script = os.path.join(script_dir, 'grid_nnunet_preprocessing.py')
         
         # Run your preprocessing Python script
+        import sys
+        python_exe = sys.executable
         cmd = [
-            'python',
+            python_exe,
             preprocess_script,
             '--subj_dir', self.subj_dir,
             '--subject', self.subject,
             '--output_folder', self.output_folder
         ]
-        
+        LOGGER.info(f"Using Python: {python_exe}")
         LOGGER.info(f"Running command: {' '.join(cmd)}")
         
         try:
