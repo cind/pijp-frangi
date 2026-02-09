@@ -32,29 +32,58 @@ class PreprocessSubject(Step):
     mem = '8G'
     
     def __init__(self, project, code, args):
+        self.original_code = code 
+
+        # Parse research group and subject from the full path
+        if '/' in code:
+            parts = code.rstrip('/').split('/')
+            research_group = parts[-2]
+            subject = parts[-1]
+        else:
+            # Fallback if only subject name is passed
+            safe_code = code
+            research_group = "UNKNOWN"
+            subject = code
+
+
         super().__init__(project, code, args)
         self.datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
         self.project = project
-    
+        self.research_group = research_group
+        self.subject = subject
+
+        # Use original_code if available, otherwise reconstruct
+        if '/' in self.original_code:
+            self.subj_dir = self.original_code
+        else:
+            # Need to reconstruct from args or stored info
+            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_preprocessed'
+            self.subj_dir = os.path.join(parent_dir, self.research_group, self.subject)
+
         LOGGER.info(f"Received code: {code}")
+        LOGGER.info(f"Original code: {self.original_code}")
+        LOGGER.info(f"Research group: {self.research_group}, Subject: {self.subject}")
+        LOGGER.info(f"Subject directory: {self.subj_dir}")
+
 
         # Parse the research group and subject from the code path
         # code format: /path/to/ADNI3_preprocessed/EMCI/subject_001
-        parts = code.rstrip('/').split('/')
+        # parts = code.rstrip('/').split('/')
 
-            # Debug: print parts
-        LOGGER.info(f"Path parts: {parts}")
-        LOGGER.info(f"Number of parts: {len(parts)}")
+        #     # Debug: print parts
+        # LOGGER.info(f"Path parts: {parts}")
+        # LOGGER.info(f"Number of parts: {len(parts)}")
 
-        self.research_group = parts[-2]  # e.g., 'EMCI'
-        self.subject = parts[-1]  # e.g., 'subject_001'
+        # self.research_group = parts[-2]  # e.g., 'EMCI'
+        # self.subject = parts[-1]  # e.g., 'subject_001'
 
-        LOGGER.info(f"Extracted research_group: {self.research_group}, subject: {self.subject}")
+        # LOGGER.info(f"Extracted research_group: {self.research_group}, subject: {self.subject}")
 
-        # Use research_group_subject format for the code to avoid "/" in job names
-        #self.code = f"{self.research_group}_{self.subject}"
-        self.code = self.subject
-        self.subj_dir = code
+        # # Use research_group_subject format for the code to avoid "/" in job names
+        # #self.code = f"{self.research_group}_{self.subject}"
+        # self.code = self.subject
+        # self.subj_dir = code
+
         self.working_dir = get_case_dir(self.project, self.research_group, self.subject)
         
         self.output_folder = os.path.join(
