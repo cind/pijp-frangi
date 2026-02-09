@@ -48,11 +48,11 @@ class PreprocessSubject(Step):
 
         self.research_group = parts[-2]  # e.g., 'EMCI'
         self.subject = parts[-1]  # e.g., 'subject_001'
-        
+
         LOGGER.info(f"Extracted research_group: {self.research_group}, subject: {self.subject}")
 
         # Use research_group_subject format for the code to avoid "/" in job names
-        self.code = f"{self.research_group}_{self.subject}"
+        #self.code = f"{self.research_group}_{self.subject}"
         
         self.subj_dir = code
         self.working_dir = get_case_dir(self.project, self.research_group, self.subject)
