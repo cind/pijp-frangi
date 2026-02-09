@@ -11,7 +11,7 @@ from pijp.engine import run_module, run_file
 from pijp.exceptions import ProcessingError
 
 LOGGER = logging.getLogger(__name__)
-PROCESS_TITLE = 'nnunet_preprocess'
+PROCESS_TITLE = 'nnunet_preprocess_v2'
 
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
@@ -152,7 +152,7 @@ class PreprocessSubject(Step):
         os.environ['FSVERSION'] = '7.4.1'
         os.environ['ANTSVERSION'] = 'ants-2.5.0'
         os.environ['FSLVERSION'] = '6.0.0'
-        
+
         LOGGER.info(f"Processing subject: {self.subject} from group: {self.research_group}")
         LOGGER.info(f"Subject directory: {self.subj_dir}")
         LOGGER.info(f"Output folder: {self.output_folder}")
