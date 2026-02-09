@@ -51,6 +51,7 @@ class PreprocessSubject(Step):
         self.project = project
         self.research_group = research_group
         self.subject = subject
+        self.code = self.subject
 
         # Use original_code if available, otherwise reconstruct
         if '/' in self.original_code:
@@ -62,7 +63,7 @@ class PreprocessSubject(Step):
 
         LOGGER.info(f"Received code: {code}")
         LOGGER.info(f"Original code: {self.original_code}")
-        LOGGER.info(f"Research group: {self.research_group}, Subject: {self.subject}")
+        LOGGER.info(f"Research group: {self.research_group}, Subject: {self.code}")
         LOGGER.info(f"Subject directory: {self.subj_dir}")
 
 
@@ -84,12 +85,12 @@ class PreprocessSubject(Step):
         # self.code = self.subject
         # self.subj_dir = code
 
-        self.working_dir = get_case_dir(self.project, self.research_group, self.subject)
+        self.working_dir = get_case_dir(self.project, self.research_group, self.code)
         
         self.output_folder = os.path.join(
             '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_preprocessed_clean',
             self.research_group,
-            self.subject
+            self.code
         )
     
     @classmethod
