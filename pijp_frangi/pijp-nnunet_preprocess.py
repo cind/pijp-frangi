@@ -11,7 +11,7 @@ from pijp.engine import run_module, run_file
 from pijp.exceptions import ProcessingError
 
 LOGGER = logging.getLogger(__name__)
-PROCESS_TITLE = 'nnunet_preprocess_v2'
+PROCESS_TITLE = 'nnunet_preprocess_v3'
 
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
