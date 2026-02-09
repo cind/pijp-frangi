@@ -53,7 +53,7 @@ class PreprocessSubject(Step):
 
         # Use research_group_subject format for the code to avoid "/" in job names
         #self.code = f"{self.research_group}_{self.subject}"
-        
+        self.code = self.subject
         self.subj_dir = code
         self.working_dir = get_case_dir(self.project, self.research_group, self.subject)
         
