@@ -123,7 +123,7 @@ def main():
     
     try:
         #subject = subj_dir.split('/')[-1]
-        os.makedir(output_dir,exist_ok=True)    # in case it doesn't exist
+        os.makedirs(output_dir,exist_ok=True)    # in case it doesn't exist
         # files I need: t1, talairach, raw flair, wmmask
         t1 = os.path.join(subj_dir, subject + '-T1.nii.gz')
         shutil.copy(t1,output_dir)
