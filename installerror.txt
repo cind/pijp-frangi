@@ -1,0 +1,80 @@
+Collecting intensity-normalization
+  Using cached intensity_normalization-2.2.4-py3-none-any.whl.metadata (13 kB)
+Collecting SimpleITK<3,>=2.1.0 (from intensity-normalization)
+  Using cached simpleitk-2.5.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (7.4 kB)
+Collecting nibabel<4,>=3 (from intensity-normalization)
+  Using cached nibabel-3.2.2-py3-none-any.whl.metadata (6.2 kB)
+Collecting numpy<2,>=1.22 (from intensity-normalization)
+  Using cached numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting pillow>=9.0.0 (from intensity-normalization)
+  Using cached pillow-12.2.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (8.8 kB)
+Collecting pydicom<3,>=2.2.2 (from intensity-normalization)
+  Using cached pydicom-2.4.5-py3-none-any.whl.metadata (7.7 kB)
+Collecting pymedio<1,>=0.2.8 (from intensity-normalization)
+  Using cached pymedio-0.2.14-py3-none-any.whl.metadata (5.9 kB)
+Collecting scikit-fuzzy<1,>=0.4.2 (from intensity-normalization)
+  Using cached scikit_fuzzy-0.5.0-py2.py3-none-any.whl.metadata (2.6 kB)
+Collecting scikit-image<1,>=0.17 (from intensity-normalization)
+  Using cached scikit_image-0.25.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (14 kB)
+Collecting scikit-learn<2,>=0.24 (from intensity-normalization)
+  Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+Collecting scipy<2,>=1.5 (from intensity-normalization)
+  Using cached scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting statsmodels<1,>=0.12 (from intensity-normalization)
+  Using cached statsmodels-0.14.6-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (9.5 kB)
+Collecting packaging>=14.3 (from nibabel<4,>=3->intensity-normalization)
+  Using cached packaging-26.1-py3-none-any.whl.metadata (3.5 kB)
+Requirement already satisfied: setuptools in ./normvenv/lib/python3.10/site-packages (from nibabel<4,>=3->intensity-normalization) (58.1.0)
+Collecting networkx>=3.0 (from scikit-image<1,>=0.17->intensity-normalization)
+  Using cached networkx-3.4.2-py3-none-any.whl.metadata (6.3 kB)
+Collecting imageio!=2.35.0,>=2.33 (from scikit-image<1,>=0.17->intensity-normalization)
+  Using cached imageio-2.37.3-py3-none-any.whl.metadata (9.7 kB)
+Collecting tifffile>=2022.8.12 (from scikit-image<1,>=0.17->intensity-normalization)
+  Using cached tifffile-2025.5.10-py3-none-any.whl.metadata (31 kB)
+Collecting lazy-loader>=0.4 (from scikit-image<1,>=0.17->intensity-normalization)
+  Using cached lazy_loader-0.5-py3-none-any.whl.metadata (5.9 kB)
+Collecting joblib>=1.2.0 (from scikit-learn<2,>=0.24->intensity-normalization)
+  Using cached joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+Collecting threadpoolctl>=3.1.0 (from scikit-learn<2,>=0.24->intensity-normalization)
+  Using cached threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+Collecting pandas!=2.1.0,>=1.4 (from statsmodels<1,>=0.12->intensity-normalization)
+  Using cached pandas-2.3.3.tar.gz (4.5 MB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Installing backend dependencies: started
+  Installing backend dependencies: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Preparing metadata (pyproject.toml) did not run successfully.
+  │ exit code: 1
+  ╰─> [16 lines of output]
+      + meson setup /tmp/pip-install-ufiev2oo/pandas_265d13e633e24d1fb37b344c4956ff02 /tmp/pip-install-ufiev2oo/pandas_265d13e633e24d1fb37b344c4956ff02/.mesonpy-6vsdo0_y -Dbuildtype=release -Db_ndebug=if-release -Db_vscrt=md --vsenv --native-file=/tmp/pip-install-ufiev2oo/pandas_265d13e633e24d1fb37b344c4956ff02/.mesonpy-6vsdo0_y/meson-python-native-file.ini
+      The Meson build system
+      Version: 1.11.1
+      Source dir: /tmp/pip-install-ufiev2oo/pandas_265d13e633e24d1fb37b344c4956ff02
+      Build dir: /tmp/pip-install-ufiev2oo/pandas_265d13e633e24d1fb37b344c4956ff02/.mesonpy-6vsdo0_y
+      Build type: native build
+      Project name: pandas
+      Project version: 2.3.3
+      C compiler for the host machine: cc (gcc 4.8.5 "cc (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)")
+      C linker for the host machine: cc ld.bfd 2.27-44
+      C++ compiler for the host machine: c++ (gcc 4.8.5 "c++ (GCC) 4.8.5 20150623 (Red Hat 4.8.5-44)")
+      C++ linker for the host machine: c++ ld.bfd 2.27-44
+      
+      ../meson.build:2:0: ERROR: Compiler cython cannot compile programs.
+      
+      A full log can be found at /tmp/pip-install-ufiev2oo/pandas_265d13e633e24d1fb37b344c4956ff02/.mesonpy-6vsdo0_y/meson-logs/meson-log.txt
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+error: metadata-generation-failed
+
+× Encountered error while generating package metadata.
+╰─> pandas
+
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
