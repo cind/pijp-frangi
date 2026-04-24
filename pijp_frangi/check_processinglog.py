@@ -15,3 +15,6 @@ from pijp.repositories import ProcessingLog
 log = ProcessingLog()
 print(log.db)
 print(log.connection)
+
+print(dir(log.db))
+print(log.db.__dict__)
