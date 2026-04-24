@@ -12,7 +12,7 @@ from pijp.engine import run_module, run_file
 from pijp.exceptions import ProcessingError
 
 LOGGER = logging.getLogger(__name__)
-PROCESS_TITLE = 'mcpvs_preprocessv3'
+PROCESS_TITLE = 'mcpvs_preprocessv4'
 
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
@@ -140,7 +140,7 @@ class PreprocessSubject(Step):
         ]
         LOGGER.info(f"Using Python: {python_exe}")
         LOGGER.info(f"Running command: {' '.join(cmd)}")
-        
+
         try:
             result = subprocess.run(
                 cmd,
