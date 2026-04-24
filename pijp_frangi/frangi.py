@@ -514,9 +514,10 @@ exit;"""
         LOGGER.info(self.code + ': wmhmasks total done!')
 
     def make_wmhmaskfs(self):
-        #new: added 05/13/24. segmentation of WMH using FS SAMSEG
+        # new: added 05/13/24. segmentation of WMH using FS SAMSEG
         # there may be a faster version of this, optimized for gpu ?
         # wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
+        # ****currently using this
         flair = os.path.join(self.working_dir, self.code + "_FLAIRbcreg.nii.gz")
         
         samsegoutput = os.path.join(self.working_dir,'samsegoutput')
