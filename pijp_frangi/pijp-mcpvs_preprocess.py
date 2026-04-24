@@ -31,25 +31,45 @@ class PreprocessSubject(Step):
     mem = '8G'  # Adjust as needed
     
     def __init__(self, project, code, args):
+        self.original_code = code 
+
+        # Parse research group and subject from the full path
+        if '/' in code:
+            parts = code.rstrip('/').split('/')
+            #research_group = parts[-2]
+            subject = parts[-1]
+        else:
+            # # Fallback if only subject name is passed
+            # safe_code = code
+            # research_group = "UNKNOWN"
+            # subject = code
+            subject = code
+
+
         super().__init__(project, code, args)
         self.datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
         self.project = project
-        self.code = code  # This will be your subject folder path
-        self.working_dir = get_case_dir(self.project, os.path.basename(code))
-        
-        # # Parse the research group and subject from the code
-        # # Assuming code format: /path/to/ADNI3_preprocessed/EMCI/subject_001
-        # parts = code.split('/')
-        # self.research_group = parts[-2]  # e.g., 'EMCI'
-        # self.subject = parts[-1]  # e.g., 'subject_001'
+        #self.research_group = research_group
+        self.subject = subject
+        self.code = self.subject
 
-        parts = code.split('/')
-        self.subject = parts[-1]
-        #self.subject = os.path.basename(code)
-        self.subj_dir = code
+        # Use original_code if available, otherwise reconstruct
+        if '/' in self.original_code:
+            self.subj_dir = self.original_code
+        else:
+            # Need to reconstruct from args or stored info
+            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed'
+            self.subj_dir = os.path.join(parent_dir, self.subject)
+
+        LOGGER.info(f"Received code: {code}")
+        LOGGER.info(f"Original code: {self.original_code}")
+       # LOGGER.info(f"Research group: {self.research_group}, Subject: {self.code}")
+        LOGGER.info(f"Subject directory: {self.subj_dir}")
+
+        self.working_dir = get_case_dir(self.project, self.code)
         self.output_folder = os.path.join(
             '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed',
-            self.subject
+            self.code
         )
         
     @classmethod
