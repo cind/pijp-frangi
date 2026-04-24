@@ -253,13 +253,13 @@ def main():
         run_command(['flirt', '-in', flair_bc, '-ref',t1_bc,'-out',flair_bcreg, '-dof', '6'])
         print('flair registered to t1')
 
-        ### brain extraction using SPM
-        t1_bc_brainextract = os.path.join(output_dir,subjname+'-T1bcbrainmask.nii.gz')
-        brain_mask = os.path.join(output_dir,subjname+'-brainmask.nii.gz')
-        print("SPM setup complete, starting segmentation...")
-        unzipped_t1 = gunzip(t1_bc)
-        spm12_brain_extract(unzipped_t1,spm12_path,brain_mask,t1_bc_brainextract,'R2019a')
-        print("Segmentation complete")
+        # ### brain extraction using SPM
+        # t1_bc_brainextract = os.path.join(output_dir,subjname+'-T1bcbrainmask.nii.gz')
+        # brain_mask = os.path.join(output_dir,subjname+'-brainmask.nii.gz')
+        # print("SPM setup complete, starting segmentation...")
+        # unzipped_t1 = gunzip(t1_bc)
+        # spm12_brain_extract(unzipped_t1,spm12_path,brain_mask,t1_bc_brainextract,'R2019a')
+        # print("Segmentation complete")
 
 
         ## intensity normalization with fuzzy-C means: https://github.com/jcreinhold/intensity-normalization?tab=readme-ov-file
@@ -268,7 +268,8 @@ def main():
         ## need this becuase python version is too low
         #intensity_norm_python = '/home/vhasfctangs1/pijp-frangi/pijp_frangi/normenv/bin/python'
         intensity_norm_exe = '/home/vhasfctangs1/normvenv/bin/zscore-normalize'
-        run_command([intensity_norm_exe, t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
+        #run_command([intensity_norm_exe, t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
+        run_command([intensity_norm_exe, t1_bc, '-o', t1_bc_brainextract_norm])
         #run_command(['intensity-normalize', 'zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         #run_command([intensity_norm_python, '-m', 'intensity_normalization.cli.zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         print("finished intensity normalization")
