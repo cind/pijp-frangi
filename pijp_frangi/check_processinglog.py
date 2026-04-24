@@ -7,3 +7,6 @@ print(f"Found {len(rows)} logged subjects")
 print(rows[:3])  # preview first few
 
 print([m for m in dir(log) if not m.startswith('_')])
+
+from pijp.core import get_project_dir
+print(get_project_dir('ADNI3_frangi'))
