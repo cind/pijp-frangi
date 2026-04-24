@@ -11,7 +11,7 @@ from pijp.engine import run_module, run_file
 from pijp.exceptions import ProcessingError
 
 LOGGER = logging.getLogger(__name__)
-PROCESS_TITLE = 'mcpvs_preprocessv2'
+PROCESS_TITLE = 'mcpvs_preprocessv3'
 
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
@@ -111,7 +111,7 @@ class PreprocessSubject(Step):
         """
         Main processing entry point.
         """
-        LOGGER.info(f"Processing subject: {self.subject} from group: {self.research_group}")
+        LOGGER.info(f"Processing subject: {self.subject}")
         LOGGER.info(f"Subject directory: {self.subj_dir}")
         LOGGER.info(f"Output folder: {self.output_folder}")
         
