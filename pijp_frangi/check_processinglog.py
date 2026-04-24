@@ -18,3 +18,12 @@ print(log.connection)
 
 print(dir(log.db))
 print(log.db.__dict__)
+
+import pijp
+print(pijp.__file__)  # shows where pijp is installed
+print(pijp.__dict__)  # shows pijp's attributes
+
+# look at pijp config
+from pijp import config
+print(config.__file__)
+print(config.__dict__)
