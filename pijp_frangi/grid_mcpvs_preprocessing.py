@@ -215,11 +215,12 @@ def main():
         subjname = Path(t1).stem.replace('.T1.nii', '')   # redefine subject based on full image name
         shutil.copy(t1,os.path.join(output_dir,subjname + '-T1raw.nii.gz'))
         t1 = os.path.join(output_dir, subjname + '-T1raw.nii.gz')
+        print('t1 was copied over')
 
         flair = [os.path.join(subj_dir,flair) for flair in os.listdir(subj_dir) if flair.endswith('.FLAIR.nii.gz')][0]
         shutil.copy(flair,os.path.join(output_dir,subjname + '-FLAIRraw.nii.gz'))
         flair = os.path.join(output_dir, subjname + '-FLAIRraw.nii.gz')
-       
+        print('flair was copied over')
         
         # Check T1 exists
         if not os.path.exists(t1):
@@ -239,16 +240,18 @@ def main():
         # N4 bias field correction for T1
         t1_bc = os.path.join(output_dir,subjname+'-T1bc.nii.gz')
         run_command(['N4BiasFieldCorrection', '-i', t1, '-o', t1_bc])
+        print('t1 bias field correction finished')
 
         ## identify raw flair and processing with N4 bias field correction
         # flair_bc = os.path.join(subj_dir,subject+'-FLAIRbc.nii.gz')
         flair_bc = os.path.join(output_dir,subjname+'-FLAIRbc.nii.gz')
         run_command(['N4BiasFieldCorrection', '-i', flair, '-o', flair_bc])
-
+        print('flair bias field correction finished')
 
         # #### register flair to t1 and to template:
         flair_bcreg = os.path.join(output_dir,subjname+'-FLAIRbcreg.nii.gz')
         run_command(['flirt', '-in', flair_bc, '-ref',t1_bc,'-out',flair_bcreg, '-dof', '6'])
+        print('flair registered to t1')
 
         ### brain extraction using SPM
         t1_bc_brainextract = os.path.join(output_dir,subjname+'-T1bcbrainmask.nii.gz')
@@ -261,8 +264,14 @@ def main():
 
         ## intensity normalization with fuzzy-C means: https://github.com/jcreinhold/intensity-normalization?tab=readme-ov-file
         t1_bc_brainextract_norm = os.path.join(output_dir,subjname+'-T1bcbrainmask_norm.nii.gz')
-        run_command(['intensity-normalize', 'zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
 
+        ## need this becuase python version is too low
+        #intensity_norm_python = '/home/vhasfctangs1/pijp-frangi/pijp_frangi/normenv/bin/python'
+        intensity_norm_exe = '/home/vhasfctangs1/normvenv/bin/zscore-normalize'
+        run_command([intensity_norm_exe, t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
+        #run_command(['intensity-normalize', 'zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
+        #run_command([intensity_norm_python, '-m', 'intensity_normalization.cli.zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
+        print("finished intensity normalization")
 
         #break  # only do one for testing
     except FileNotFoundError as e:
