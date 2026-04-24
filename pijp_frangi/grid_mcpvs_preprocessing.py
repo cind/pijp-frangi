@@ -267,7 +267,7 @@ def main():
 
         ## need this becuase python version is too low
         #intensity_norm_python = '/home/vhasfctangs1/pijp-frangi/pijp_frangi/normenv/bin/python'
-        intensity_norm_exe = '/home/vhasfctangs1/normvenv/bin/zscore-normalize'
+        intensity_norm_exe = '/home/vhasfctangs1/pijp-frangi/normvenv/bin/zscore-normalize'
         #run_command([intensity_norm_exe, t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         run_command([intensity_norm_exe, t1_bc, '-o', t1_bc_brainextract_norm])
         #run_command(['intensity-normalize', 'zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
