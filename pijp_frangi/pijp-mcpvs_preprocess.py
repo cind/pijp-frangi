@@ -43,7 +43,9 @@ class PreprocessSubject(Step):
         # self.research_group = parts[-2]  # e.g., 'EMCI'
         # self.subject = parts[-1]  # e.g., 'subject_001'
 
-        self.subject = os.path.basename(code)
+        parts = code.split('/')
+        self.subject = parts[-1]
+        #self.subject = os.path.basename(code)
         self.subj_dir = code
         self.output_folder = os.path.join(
             '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed',
