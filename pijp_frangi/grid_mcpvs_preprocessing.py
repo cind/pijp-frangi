@@ -5,11 +5,11 @@ import nibabel as nib
 import shutil
 import pandas as pd
 import argparse
-from nipype.interfaces.spm import NewSegment
-from nipype.interfaces.spm.base import Info
+# from nipype.interfaces.spm import NewSegment
+# from nipype.interfaces.spm.base import Info
 import gzip
 from pathlib import Path
-from nipype.interfaces.matlab import MatlabCommand
+#from nipype.interfaces.matlab import MatlabCommand
 # tells nipype which MATLAB executable to use and where SPM12 is
 # MatlabCommand.set_default_matlab_cmd('matlab -nodisplay -nosplash')
 # MatlabCommand.set_default_paths('/opt/mathworks/MatlabToolkits/spm12_r7219')
