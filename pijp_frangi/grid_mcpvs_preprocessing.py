@@ -9,7 +9,25 @@ from nipype.interfaces.spm import NewSegment
 from nipype.interfaces.spm.base import Info
 import gzip
 from pathlib import Path
+from nipype.interfaces.matlab import MatlabCommand
+# tells nipype which MATLAB executable to use and where SPM12 is
+# MatlabCommand.set_default_matlab_cmd('matlab -nodisplay -nosplash')
+# MatlabCommand.set_default_paths('/opt/mathworks/MatlabToolkits/spm12_r7219')
 
+# test matlab and spm
+#print("MATLAB cmd:", MatlabCommand().cmd)
+# print("SPM version:", NewSegment().version)
+# print("SPM path:", Info.name())
+
+# # workaround for the docstring version-check bug
+# import nipype.interfaces.spm as spm
+# spm.SPMCommand.set_mlab_paths(
+#     matlab_cmd='matlab -nodisplay -nosplash',
+#     use_mcr=False
+# )
+
+os.environ['SPMPATH'] = '/opt/mathworks/MatlabToolkits/spm12_r7219'
+#os.environ['MATLAB_VERSION'] = 'R2019a'
 ##########################################
 ###     some useful functions       ####
 ##########################################
@@ -19,44 +37,128 @@ def run_command(cmd_list):
     subprocess.run(cmd_list, check=True)
 
 
-def spm12_brain_extract(t1_path, spm12_dir, output_mask, output_brain):    
-    # Configure SPM12 tissue probability maps
-    tpm = spm12_dir + '/tpm/TPM.nii'
-    tissue_list = []
-    for i, (ngaus, native) in enumerate([
-        (1, (1, 0)),   # GM
-        (1, (1, 0)),   # WM
-        (2, (1, 0)),   # CSF
-        (3, (0, 0)),   # skull   — excluded
-        (4, (0, 0)),   # soft tissue — excluded
-        (2, (0, 0)),   # air/background — excluded
-    ], start=1):
-        tissue_list.append(((tpm, i), ngaus, native, (0, 0)))
+# def spm12_brain_extract(t1_path, spm12_dir, output_mask, output_brain):    
+#     # Configure SPM12 tissue probability maps
+#     tpm = spm12_dir + '/tpm/TPM.nii'
+#     tissue_list = []
+#     for i, (ngaus, native) in enumerate([
+#         (1, (1, 0)),   # GM
+#         (1, (1, 0)),   # WM
+#         (2, (1, 0)),   # CSF
+#         (3, (0, 0)),   # skull   — excluded
+#         (4, (0, 0)),   # soft tissue — excluded
+#         (2, (0, 0)),   # air/background — excluded
+#     ], start=1):
+#         tissue_list.append(((tpm, i), ngaus, native, (0, 0)))
 
-    # Run segmentation
-    seg = NewSegment()
-    seg.inputs.channel_files = t1_path
-    seg.inputs.channel_info = (0, np.inf, (False, False))  # skip bias correction
-    seg.inputs.tissues = tissue_list
-    seg.inputs.write_deformation_fields = [False, False]
-    result = seg.run()
+#     # Run segmentation
+#     seg = NewSegment()
+#     seg.inputs.channel_files = t1_path
+#     seg.inputs.channel_info = (0, np.inf, (False, False))  # skip bias correction
+#     seg.inputs.tissues = tissue_list
+#     seg.inputs.write_deformation_fields = [False, False]
+#     result = seg.run()
+
+#     # Build brain mask from GM + WM + CSF probability maps
+#     prob_maps = result.outputs.native_class_images[:3]  # classes 1-3 only
+#     ref = nib.load(t1_path)
+#     brain_prob = sum(nib.load(p[0]).get_fdata() for p in prob_maps)
+#     mask = (brain_prob > 0.5).astype(np.int16)
+#     stripped = ref.get_fdata() * mask
+
+#     # Save outputs
+#     # stem = Path(t1_path).stem.replace('.nii', '')
+#     mask_path = output_mask
+#     brain_path = output_brain
+#     nib.save(nib.Nifti1Image(mask, ref.affine, ref.header), mask_path)
+#     nib.save(nib.Nifti1Image(stripped, ref.affine, ref.header), brain_path)
+
+#     return brain_path
+
+
+def spm12_brain_extract(t1_path, spm12_dir, output_mask, output_brain, export_matlab_version):
+    
+    matlab_script = f"""
+try
+    addpath('{spm12_dir}');
+    spm('defaults', 'FMRI');
+    spm_jobman('initcfg');
+
+    matlabbatch{{1}}.spm.spatial.preproc.channel.vols = {{'{t1_path},1'}};
+    matlabbatch{{1}}.spm.spatial.preproc.channel.biasreg = 0;
+    matlabbatch{{1}}.spm.spatial.preproc.channel.biasfwhm = Inf;
+    matlabbatch{{1}}.spm.spatial.preproc.channel.write = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(1).tpm = {{'{spm12_dir}/tpm/TPM.nii,1'}};
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(1).ngaus = 1;
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(1).native = [1 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(1).warped = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(2).tpm = {{'{spm12_dir}/tpm/TPM.nii,2'}};
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(2).ngaus = 1;
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(2).native = [1 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(2).warped = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(3).tpm = {{'{spm12_dir}/tpm/TPM.nii,3'}};
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(3).ngaus = 2;
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(3).native = [1 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(3).warped = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(4).tpm = {{'{spm12_dir}/tpm/TPM.nii,4'}};
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(4).ngaus = 3;
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(4).native = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(4).warped = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(5).tpm = {{'{spm12_dir}/tpm/TPM.nii,5'}};
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(5).ngaus = 4;
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(5).native = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(5).warped = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(6).tpm = {{'{spm12_dir}/tpm/TPM.nii,6'}};
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(6).ngaus = 2;
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(6).native = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.tissue(6).warped = [0 0];
+    matlabbatch{{1}}.spm.spatial.preproc.warp.mrf = 1;
+    matlabbatch{{1}}.spm.spatial.preproc.warp.cleanup = 1;
+    matlabbatch{{1}}.spm.spatial.preproc.warp.reg = [0 0.001 0.5 0.05 0.2];
+    matlabbatch{{1}}.spm.spatial.preproc.warp.affreg = 'mni';
+    matlabbatch{{1}}.spm.spatial.preproc.warp.fwhm = 0;
+    matlabbatch{{1}}.spm.spatial.preproc.warp.samp = 3;
+    matlabbatch{{1}}.spm.spatial.preproc.warp.write = [0 0];
+
+    spm_jobman('run', matlabbatch);
+catch ME
+    report = ME.getReport;
+    fprintf(2, report);
+    exit(-1);
+end
+exit;"""
+
+    # Write to a temp .m file, mirroring your working script pattern
+    script_path = os.path.join(os.path.dirname(t1_path), 'spm_segment.m')
+    with open(script_path, 'w') as f:
+        f.write(matlab_script)
+
+    cmd = f'export MATLAB_VERSION={export_matlab_version} && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r spm_segment'
+    proc = subprocess.Popen(cmd, shell=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            cwd=os.path.dirname(t1_path))
+    output, error = proc.communicate()
+
+    if proc.returncode != 0:
+        error = error.decode('ascii', errors='ignore')
+        raise RuntimeError(f'MATLAB/SPM failure:\n{error}')
 
     # Build brain mask from GM + WM + CSF probability maps
-    prob_maps = result.outputs.native_class_images[:3]  # classes 1-3 only
+    t1_stem = os.path.basename(t1_path).replace('.nii', '')
+    t1_dir = os.path.dirname(t1_path)
     ref = nib.load(t1_path)
-    brain_prob = sum(nib.load(p[0]).get_fdata() for p in prob_maps)
+    brain_prob = sum(
+        nib.load(os.path.join(t1_dir, f'c{i}{t1_stem}.nii')).get_fdata()
+        for i in range(1, 4)
+    )
     mask = (brain_prob > 0.5).astype(np.int16)
     stripped = ref.get_fdata() * mask
 
-    # Save outputs
-    # stem = Path(t1_path).stem.replace('.nii', '')
-    mask_path = output_mask
-    brain_path = output_brain
-    nib.save(nib.Nifti1Image(mask, ref.affine, ref.header), mask_path)
-    nib.save(nib.Nifti1Image(stripped, ref.affine, ref.header), brain_path)
+    nib.save(nib.Nifti1Image(mask, ref.affine, ref.header), output_mask)
+    nib.save(nib.Nifti1Image(stripped, ref.affine, ref.header), output_brain)
 
-    return brain_path
-
+    return output_brain
 
 def gunzip(path):
     out_path = path.replace('.nii.gz', '.nii')
@@ -110,7 +212,7 @@ def main():
         # files I need: t1, talairach, raw flair, wmmask
         #t1 = os.path.join(subj_dir, subject + '.T1.nii.gz')
         t1 = [os.path.join(subj_dir,t1) for t1 in os.listdir(subj_dir) if t1.endswith('.T1.nii.gz')][0]
-        subjname = Path(t1).stem.replace('.nii', '')   # redefine subject based on full image name
+        subjname = Path(t1).stem.replace('.T1.nii', '')   # redefine subject based on full image name
         shutil.copy(t1,os.path.join(output_dir,subjname + '-T1raw.nii.gz'))
         t1 = os.path.join(output_dir, subjname + '-T1raw.nii.gz')
 
@@ -151,8 +253,11 @@ def main():
         ### brain extraction using SPM
         t1_bc_brainextract = os.path.join(output_dir,subjname+'-T1bcbrainmask.nii.gz')
         brain_mask = os.path.join(output_dir,subjname+'-brainmask.nii.gz')
+        print("SPM setup complete, starting segmentation...")
         unzipped_t1 = gunzip(t1_bc)
-        spm12_brain_extract(unzipped_t1,spm12_path,brain_mask,t1_bc_brainextract)
+        spm12_brain_extract(unzipped_t1,spm12_path,brain_mask,t1_bc_brainextract,'R2019a')
+        print("Segmentation complete")
+
 
         ## intensity normalization with fuzzy-C means: https://github.com/jcreinhold/intensity-normalization?tab=readme-ov-file
         t1_bc_brainextract_norm = os.path.join(output_dir,subjname+'-T1bcbrainmask_norm.nii.gz')
