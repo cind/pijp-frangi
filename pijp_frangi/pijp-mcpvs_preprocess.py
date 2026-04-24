@@ -3,6 +3,7 @@ import logging
 import argparse
 import datetime
 import subprocess
+import nibabel as nib
 
 from pijp import util
 from pijp.repositories import ProcessingLog
@@ -111,6 +112,10 @@ class PreprocessSubject(Step):
         """
         Main processing entry point.
         """
+        os.environ['FSVERSION'] = '7.4.1'
+        os.environ['ANTSVERSION'] = 'ants-2.5.0'
+        os.environ['FSLVERSION'] = '6.0.0'
+        os.environ['MATLAB_VERSION'] = ''
         LOGGER.info(f"Processing subject: {self.subject}")
         LOGGER.info(f"Subject directory: {self.subj_dir}")
         LOGGER.info(f"Output folder: {self.output_folder}")
@@ -118,15 +123,22 @@ class PreprocessSubject(Step):
         # Create output directory
         os.makedirs(self.output_folder, exist_ok=True)
         
+        # Get the full path to the preprocessing script
+        # Assumes it's in the same directory as this script
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        preprocess_script = os.path.join(script_dir, 'grid_mcpvs_preprocessing.py')
+        
         # Run your preprocessing Python script
+        import sys
+        python_exe = sys.executable
         cmd = [
-            'python',
-            '/home/vhasfctangs1/pijp-nnunet2/grid_mcpvs_preprocessing.py',  # Make sure this is in your PATH or use full path
+            python_exe,
+            preprocess_script,
             '--subj_dir', self.subj_dir,
             '--subject', self.subject,
             '--output_folder', self.output_folder
         ]
-        
+        LOGGER.info(f"Using Python: {python_exe}")
         LOGGER.info(f"Running command: {' '.join(cmd)}")
         
         try:

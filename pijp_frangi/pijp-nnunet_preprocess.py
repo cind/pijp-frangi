@@ -3,6 +3,7 @@ import logging
 import argparse
 import datetime
 import subprocess
+import nibabel as nib
 
 from pijp import util
 from pijp.repositories import ProcessingLog
