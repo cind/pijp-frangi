@@ -59,7 +59,7 @@ class PreprocessSubject(Step):
             self.subj_dir = self.original_code
         else:
             # Need to reconstruct from args or stored info
-            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed'
+            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/groundtruth_rawimgs'
             self.subj_dir = os.path.join(parent_dir, self.subject)
 
         LOGGER.info(f"Received code: {code}")
