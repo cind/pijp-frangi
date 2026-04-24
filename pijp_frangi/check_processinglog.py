@@ -10,3 +10,8 @@ print([m for m in dir(log) if not m.startswith('_')])
 
 from pijp.core import get_project_dir
 print(get_project_dir('ADNI3_frangi'))
+
+from pijp.repositories import ProcessingLog
+log = ProcessingLog()
+print(log.db)
+print(log.connection)
