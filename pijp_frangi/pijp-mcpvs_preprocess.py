@@ -115,7 +115,7 @@ class PreprocessSubject(Step):
         os.environ['FSVERSION'] = '7.4.1'
         os.environ['ANTSVERSION'] = 'ants-2.5.0'
         os.environ['FSLVERSION'] = '6.0.0'
-        os.environ['MATLAB_VERSION'] = ''
+        os.environ['MATLAB_VERSION'] = 'R2019a'
         LOGGER.info(f"Processing subject: {self.subject}")
         LOGGER.info(f"Subject directory: {self.subj_dir}")
         LOGGER.info(f"Output folder: {self.output_folder}")

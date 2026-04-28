@@ -128,13 +128,23 @@ catch ME
 end
 exit;"""
 
-    # Write to a temp .m file, mirroring your working script pattern
+    # Write to a temp .m file, mirroring frangi script patterns
     script_path = os.path.join(os.path.dirname(t1_path), 'spm_segment.m')
     with open(script_path, 'w') as f:
         f.write(matlab_script)
 
+    # export includes extra stuff to prevent screens from popping up / memory issues
     #cmd = f'export MATLAB_VERSION={export_matlab_version} && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r spm_segment'
-    cmd = f'export MATLAB_VERSION={export_matlab_version} && export MATLAB_USE_USERWORK=0 && export MW_DDUX_DISABLE=1 && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r spm_segment'
+    #cmd = f'export MATLAB_VERSION={export_matlab_version} && export MATLAB_USE_USERWORK=0 && export MW_DDUX_DISABLE=1 && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r spm_segment'
+    cmd = (
+    f'export MATLAB_VERSION={export_matlab_version} && '
+    f'export MW_DDUX_DISABLE=1 && '
+    f'export MW_CONNECTOR_ENABLE=false && '
+    f'export MATLAB_ENABLE_NETWORK=0 && '
+    f'export HTTP_PROXY="" && '
+    f'export HTTPS_PROXY="" && '
+    f'matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -nodisplay -r spm_segment'
+        )
     proc = subprocess.Popen(cmd, shell=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
