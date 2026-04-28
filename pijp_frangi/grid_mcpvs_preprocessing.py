@@ -133,7 +133,8 @@ exit;"""
     with open(script_path, 'w') as f:
         f.write(matlab_script)
 
-    cmd = f'export MATLAB_VERSION={export_matlab_version} && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r spm_segment'
+    #cmd = f'export MATLAB_VERSION={export_matlab_version} && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r spm_segment'
+    cmd = f'export MATLAB_VERSION={export_matlab_version} && export MATLAB_USE_USERWORK=0 && export MW_DDUX_DISABLE=1 && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r spm_segment'
     proc = subprocess.Popen(cmd, shell=True,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,

@@ -28,8 +28,8 @@ class PreprocessSubject(Step):
     process_name = PROCESS_TITLE
     step_name = 'preprocess'
     step_cli = 'preprocess'
-    cpu = 1
-    mem = '8G'  # Adjust as needed
+    cpu = 2
+    mem = '16G'
     
     def __init__(self, project, code, args):
         self.original_code = code 
