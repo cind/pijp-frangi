@@ -271,7 +271,7 @@ def main():
         #run_command(['intensity-normalize', 'zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         #run_command([intensity_norm_python, '-m', 'intensity_normalization.cli.zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         
-        intensity_norm_exe = '/home/vhasfctangs1/pijp-frangi/normvenv/bin/zscore-normalize'
+        intensity_norm_exe = '/home/vhasfctangs1/pijp-frangi/normvenv/bin/fcm-normalize'
         run_command([intensity_norm_exe, t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         print("finished intensity normalization")
 
