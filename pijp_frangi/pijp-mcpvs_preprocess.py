@@ -12,7 +12,7 @@ from pijp.engine import run_module, run_file
 from pijp.exceptions import ProcessingError
 
 LOGGER = logging.getLogger(__name__)
-PROCESS_TITLE = 'mcpvs_preprocessv5'
+PROCESS_TITLE = 'mcpvs_preprocessv6'
 
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
@@ -69,7 +69,7 @@ class PreprocessSubject(Step):
 
         self.working_dir = get_case_dir(self.project, self.code)
         self.output_folder = os.path.join(
-            '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed2',
+            '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed3',
             self.code
         )
         
