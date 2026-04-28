@@ -1,0 +1,125 @@
+2026-04-28 11:59:38,378 INFO SGE: /home/vhasfctangs1/pijp-frangi/venv/bin/python /home/vhasfctangs1/pijp-frangi/pijp_frangi/pijp-mcpvs_preprocess.py --grid-start -s preprocess -p ADNI3_frangi -c ADNI3_016_S_4952y00 -q all.8g.q
+2026-04-28 12:00:55,633 INFO 
+## Job Initiated
+##    Host: c7-all-4g-04.vacind.org
+## Process: mcpvs_preprocessv6
+##    Step: preprocess
+## Project: ADNI3_frangi
+##    Code: ADNI3_016_S_4952y00
+2026-04-28 12:00:55,653 INFO Processing subject: ADNI3_016_S_4952y00
+2026-04-28 12:00:55,653 INFO Subject directory: /m/Researchers/SerenaT/deeppvs/for_nnunet/groundtruth_rawimgs/ADNI3_016_S_4952y00
+2026-04-28 12:00:55,653 INFO Output folder: /m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed3/ADNI3_016_S_4952y00
+2026-04-28 12:00:55,731 INFO Using Python: /home/vhasfctangs1/pijp-frangi/venv/bin/python
+2026-04-28 12:00:55,731 INFO Running command: /home/vhasfctangs1/pijp-frangi/venv/bin/python /home/vhasfctangs1/pijp-frangi/pijp_frangi/grid_mcpvs_preprocessing.py --subj_dir /m/Researchers/SerenaT/deeppvs/for_nnunet/groundtruth_rawimgs/ADNI3_016_S_4952y00 --subject ADNI3_016_S_4952y00 --output_folder /m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed3/ADNI3_016_S_4952y00
+2026-04-28 12:07:06,572 INFO 
+Final result: 
+0.999942 -0.006248 -0.008770 11.791944 
+0.006300 0.999963 0.005937 1.557329 
+0.008733 -0.005992 0.999944 0.929849 
+0.000000 0.000000 0.000000 1.000000 
+
+Processing images in: /m/Researchers/SerenaT/deeppvs/for_nnunet/groundtruth_rawimgs/ADNI3_016_S_4952y00
+t1 was copied over
+flair was copied over
+t1 bias field correction finished
+flair bias field correction finished
+flair registered to t1
+SPM setup complete, starting segmentation...
+ERROR processing ADNI3_016_S_4952y00: MATLAB/SPM failure:
+
+--------------------------------------------------------------------------------
+          std::terminate() detected at Tue Apr 28 12:07:06 2026 -0700
+--------------------------------------------------------------------------------
+
+Configuration:
+  Crash Decoding           : Disabled - No sandbox or build area path
+  Crash Mode               : continue (default)
+  Default Encoding         : UTF-8
+  Deployed                 : false
+  GNU C Library            : 2.17 stable
+  MATLAB Architecture      : glnxa64
+  MATLAB Entitlement ID    : 5315168
+  MATLAB Root              : /opt/mathworks/R2019a
+  MATLAB Version           : 9.6.0.1174912 (R2019a) Update 5
+  Operating System         : Linux 3.10.0-1160.119.1.el7.x86_64 #1 SMP Tue Jun 4 14:43:51 UTC 2024 x86_64
+  Process ID               : 5993
+  Processor ID             : x86 Family 6 Model 79 Stepping 1, GenuineIntel
+  Session Key              : 7f294dc7-e3f9-48d3-a422-905dbf24db57
+  Static TLS mitigation    : Disabled: Unable to open display
+  Window System            : No active display
+
+Fault Count: 1
+
+
+Abnormal termination:
+std::terminate()
+
+Register State (captured):
+  RAX = 0000000000000000  RBX = 00002b595707bd98
+  RCX = 0000000000000000  RDX = 00002b595705ce00
+  RSP = 00002b5972603480  RBP = 00002b5972603840
+  RSI = 00002b59570243c6  RDI = 00002b5972603490
+
+   R8 = 00002b595706bd08   R9 = 0000000000000001
+  R10 = 0000000000000000  R11 = 0000000000000000
+  R12 = 00002b595706bd08  R13 = 00002b5972603c00
+  R14 = 00002b59726040f0  R15 = 00002b59726040c0
+
+  RIP = 00002b5956f741ae  EFL = 0000000000000000
+
+   CS = 0000   FS = 0000   GS = 0000
+
+Stack Trace (captured):
+[  0] 0x00002b5956f6b713       /opt/mathworks/R2019a/bin/glnxa64/libmwfl.so+00829203
+[  1] 0x00002b5956f6b90c       /opt/mathworks/R2019a/bin/glnxa64/libmwfl.so+00829708 _ZN10foundation4core4diag15stacktrace_base7captureEm+00000028
+[  2] 0x00002b5956f6e052       /opt/mathworks/R2019a/bin/glnxa64/libmwfl.so+00839762
+[  3] 0x00002b5967afe863      /opt/mathworks/R2019a/bin/glnxa64/libmwmcr.so+01214563
+[  4] 0x00002b5967b01467      /opt/mathworks/R2019a/bin/glnxa64/libmwmcr.so+01225831
+[  5] 0x00002b5967b0169a      /opt/mathworks/R2019a/bin/glnxa64/libmwmcr.so+01226394
+[  6] 0x00002b5967b01c61      /opt/mathworks/R2019a/bin/glnxa64/libmwmcr.so+01227873
+[  7] 0x00002b5967b02be7      /opt/mathworks/R2019a/bin/glnxa64/libmwmcr.so+01231847
+[  8] 0x00002b5954c603a6 /opt/mathworks/R2019a/bin/glnxa64/../../sys/os/glnxa64/libstdc++.so.6+00582566
+[  9] 0x00002b5954c5f3d9 /opt/mathworks/R2019a/bin/glnxa64/../../sys/os/glnxa64/libstdc++.so.6+00578521
+[ 10] 0x00002b5954c5fd2d /opt/mathworks/R2019a/bin/glnxa64/../../sys/os/glnxa64/libstdc++.so.6+00580909 __gxx_personality_v0+00000717
+[ 11] 0x00002b5954f62f03 /opt/mathworks/R2019a/bin/glnxa64/../../sys/os/glnxa64/libgcc_s.so.1+00065283
+[ 12] 0x00002b5954f6326b /opt/mathworks/R2019a/bin/glnxa64/../../sys/os/glnxa64/libgcc_s.so.1+00066155 _Unwind_RaiseException+00000251
+[ 13] 0x00002b5954c605fb /opt/mathworks/R2019a/bin/glnxa64/../../sys/os/glnxa64/libstdc++.so.6+00583163 __cxa_throw+00000091
+[ 14] 0x00002b5965abde22 /opt/mathworks/R2019a/bin/glnxa64/matlab_startup_plugins/connector/openssl_initializer/../../../../../bin/glnxa64/libPocoFoundation.so.48+00900642 _ZN4Poco10MemoryPool7releaseEPv+00000162
+[ 15] 0x00002b5965519e5f /opt/mathworks/R2019a/bin/glnxa64/matlab_startup_plugins/connector/openssl_initializer/../../../../../bin/glnxa64/libPocoNet.so.48+00638559 _ZN4Poco3Net19HTTPHeaderStreamBufD2Ev+00000031
+[ 16] 0x00002b596551a253 /opt/mathworks/R2019a/bin/glnxa64/matlab_startup_plugins/connector/openssl_initializer/../../../../../bin/glnxa64/libPocoNet.so.48+00639571 _ZN4Poco3Net21HTTPHeaderInputStreamD1Ev+00000067
+[ 17] 0x00002b596550dbc7 /opt/mathworks/R2019a/bin/glnxa64/matlab_startup_plugins/connector/openssl_initializer/../../../../../bin/glnxa64/libPocoNet.so.48+00588743 _ZN4Poco3Net17HTTPClientSession15receiveResponseERNS0_12HTTPResponseE+00000199
+[ 18] 0x00002b5971dda827 /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/../../../../bin/glnxa64/libmwflhttpclient.so+00141351
+[ 19] 0x00002b5971dd4d38 /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/../../../../bin/glnxa64/libmwflhttpclient.so+00118072
+[ 20] 0x00002b5971dcf17d /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/../../../../bin/glnxa64/libmwflhttpclient.so+00094589 _ZNK10foundation10httpclient16WebServiceClient23doWebServiceTransactionERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt3mapIS8_S8_St4lessIS8_ESaISt4pairIS8_S8_EEES9_RNS1_18WebServiceResponseEiS9_+00000061
+[ 21] 0x00002b5971dd0409 /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/../../../../bin/glnxa64/libmwflhttpclient.so+00099337 _ZNK10foundation10httpclient16WebServiceClient25makeWebServiceTransactionERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt3mapIS8_S8_St4lessIS8_ESaISt4pairIS8_S8_EEES9_RNS1_18WebServiceResponseEiiS9_+00000121
+[ 22] 0x00002b5971c30387 /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/mwddux_impl.so+00590727
+[ 23] 0x00002b5971c3475b /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/mwddux_impl.so+00608091
+[ 24] 0x00002b5971c17a68 /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/mwddux_impl.so+00490088
+[ 25] 0x00002b5971c99eaa /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/mwddux_impl.so+01023658
+[ 26] 0x00002b5971c1e90a /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/mwddux_impl.so+00518410
+[ 27] 0x00002b5956bb27ad       /opt/mathworks/R2019a/bin/glnxa64/libmwms.so+02697133
+[ 28] 0x00002b5971c1e586 /opt/mathworks/R2019a/bin/glnxa64/ddux/ddux_impl/mwddux_impl.so+00517510
+[ 29] 0x00002b595596abdd /opt/mathworks/R2019a/bin/glnxa64/libmwboost_thread.so.1.65.1+00080861
+[ 30] 0x00002b59549bdea5                             /lib64/libpthread.so.0+00032421
+[ 31] 0x00002b5955268b0d                                   /lib64/libc.so.6+01043213 clone+00000109
+[ 32] 0x0000000000000000                                   <unknown-module>+00000000
+
+** This crash report has been saved to disk as /home/vhasfctangs1/matlab_crash_dump.5993-1 **
+
+
+
+MATLAB is exiting because of fatal error
+/bin/sh: line 1:  5993 Killed                  matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -nodisplay -r spm_segment
+
+
+1 failed subjects logged to failed_subjects.txt
+
+2026-04-28 12:07:06,574 INFO Successfully processed ADNI3_016_S_4952y00
+2026-04-28 12:07:06,574 INFO 
+## Job Completed
+##    Host: c7-all-4g-04.vacind.org
+## Process: mcpvs_preprocessv6
+##    Step: preprocess
+## Project: ADNI3_frangi
+##    Code: ADNI3_016_S_4952y00
+## Outcome: Done
