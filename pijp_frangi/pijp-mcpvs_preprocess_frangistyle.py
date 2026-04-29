@@ -4,6 +4,9 @@ import argparse
 import datetime
 import subprocess
 import nibabel as nib
+import gzip
+from pathlib import Path
+import shutil
 
 from pijp import util
 from pijp.repositories import ProcessingLog
@@ -205,6 +208,28 @@ class PreprocessSubject(BaseStep):
 
         # Create output directory
         os.makedirs(self.output_folder, exist_ok=True)
+
+        #os.makedirs(output_dir,exist_ok=True)    # in case it doesn't exist
+
+        # find the t1s and stuff
+        t1 = [os.path.join(self.subj_dir,t1) for t1 in os.listdir(self.subj_dir) if t1.endswith('.T1.nii.gz')][0]
+        subjname = Path(t1).stem.replace('.T1.nii', '')   # redefine subject based on full image name
+        shutil.copy(t1,os.path.join(self.output_folder,subjname + '-T1raw.nii.gz'))
+        t1 = os.path.join(self.output_folder, subjname + '-T1raw.nii.gz')
+        print('t1 was copied over')
+
+        flair = [os.path.join(self.subj_dir,flair) for flair in os.listdir(self.subj_dir) if flair.endswith('.FLAIR.nii.gz')][0]
+        shutil.copy(flair,os.path.join(self.output_folder,subjname + '-FLAIRraw.nii.gz'))
+        flair = os.path.join(self.output_folder, subjname + '-FLAIRraw.nii.gz')
+        print('flair was copied over')
+        
+        # Check T1 exists
+        if not os.path.exists(t1):
+            raise FileNotFoundError(f"T1 not found: {t1}")
+        
+        # Check flair exists
+        if not os.path.exists(flair):
+            raise FileNotFoundError(f"flair not found: {flair}")
 
         # Get the full path to the preprocessing script
         # Assumes it's in the same directory as this script
