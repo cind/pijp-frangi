@@ -187,7 +187,7 @@ class Commands(BaseStep):
         #  We need the sub process, to CD to the directory with the m file.
         # Then strip off the `.m` extension.
         _script = os.path.basename(script).replace(".m", "")
-        cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r {_script}'
+        cmd = f'export MATLAB_VERSION={self.exportmatlab} && matlab -nosoftwareopengl -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -r {_script}'
 
         proc = subprocess.Popen(cmd, shell=True,
                         stdout=subprocess.PIPE,
@@ -413,7 +413,7 @@ class Stage(BaseStep):
 
     def make_wmhmask(self, t1, input_flair):
         """
-        WMH removal using LST: 
+        WMH removal using LST:
         """
         wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         os.makedirs(os.path.join(self.working_dir, 'wmhlesion'), exist_ok=True)
@@ -519,7 +519,7 @@ exit;"""
         # wmhlesion_folder = os.path.join(self.working_dir, 'wmhlesion')
         # ****currently using this
         flair = os.path.join(self.working_dir, self.code + "_FLAIRbcreg.nii.gz")
-        
+
         samsegoutput = os.path.join(self.working_dir,'samsegoutput')
         cmd_samseg = f'run_samseg --input {self.t1} {flair} --pallidum-separate --lesion --lesion-mask-pattern 0 1 --output {samsegoutput}'
         self.commands.fs(cmd_samseg)
@@ -936,7 +936,7 @@ class Analyze(Stage):
         gmstats = pd.read_csv(gm_vol,index_col=0)
         gmvol = gmstats.loc['volume'][0]
         gmvol_normed = gmvol / self.icv
-        
+
         if os.path.exists(wmhmask):
             wmh_vol = os.path.join(self.working_dir,self.code + '-wmhvol.csv')
             cmd_bin = f'MaskBinarize --input {wmhmask} --output {wmhmask}'
