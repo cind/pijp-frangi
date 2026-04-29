@@ -26,12 +26,12 @@ def get_case_dir(project, code):
     return cdir
 
 
-class PreprocessSubject(BaseStep):
+class PreprocessSubject(BaseStep, Commands):
     process_name = PROCESS_TITLE
     step_name = 'preprocess'
     step_cli = 'preprocess'
     cpu = 2
-    mem = '16G'
+    mem = '8G'
 
     def __init__(self, project, code, args):
         super().__init__(project, code, args)
@@ -77,11 +77,9 @@ class PreprocessSubject(BaseStep):
         )
 
 
-    def spm12_brain_extract(self, t1_path, spm12_dir, output_mask, output_brain, export_matlab_version):
+    def spm12_brain_extract(self, t1_path, output_mask, output_brain):
 
         matlab_script = f"""
-    try
-        addpath('{spm12_dir}');
         spm('defaults', 'FMRI');
         spm_jobman('initcfg');
 
@@ -122,12 +120,7 @@ class PreprocessSubject(BaseStep):
         matlabbatch{{1}}.spm.spatial.preproc.warp.write = [0 0];
 
         spm_jobman('run', matlabbatch);
-    catch ME
-        report = ME.getReport;
-        fprintf(2, report);
-        exit(-1);
-    end
-    exit;"""
+    """
 
     @classmethod
     def get_queue(cls, project_name):
@@ -182,8 +175,8 @@ class PreprocessSubject(BaseStep):
         # Get the full path to the preprocessing script
         # Assumes it's in the same directory as this script
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        matlab_script = self.spm12_brain_extract(args)
-        self.commands.matlab(matlab_script)
+        matlab_script = self.spm12_brain_extract(self.t1_path, self.output_mask, self.output_brain )
+        self.matlab(matlab_script)
 
 
 def run():
