@@ -29,7 +29,7 @@ class PreprocessSubject(Step):
     step_name = 'preprocess'
     step_cli = 'preprocess'
     cpu = 2
-    mem = '16G'
+    mem = '8G'
     
     def __init__(self, project, code, args):
         self.original_code = code 
