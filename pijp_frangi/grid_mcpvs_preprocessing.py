@@ -143,7 +143,7 @@ exit;"""
     f'export MATLAB_ENABLE_NETWORK=0 && '
     f'export HTTP_PROXY="" && '
     f'export HTTPS_PROXY="" && '
-    f'matlab -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -nodisplay -r spm_segment'
+    f'matlab -nosoftwareopengl -singleCompThread -nodesktop -noFigureWindows -nojvm -nosplash -nodisplay -r spm_segment'
         )
     proc = subprocess.Popen(cmd, shell=True,
                             stdout=subprocess.PIPE,
@@ -275,6 +275,9 @@ def main():
 
         ## intensity normalization with fuzzy-C means: https://github.com/jcreinhold/intensity-normalization?tab=readme-ov-file
         t1_bc_brainextract_norm = os.path.join(output_dir,subjname+'-T1bcbrainmask_norm.nii.gz')
+        intensity_norm_exe = '/home/vhasfctangs1/pijp-frangi/normvenv/bin/fcm-normalize'
+        run_command([intensity_norm_exe, t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
+        print("finished intensity normalization")
 
         ## need this becuase python version is too low
         #intensity_norm_python = '/home/vhasfctangs1/pijp-frangi/pijp_frangi/normenv/bin/python'
@@ -282,10 +285,6 @@ def main():
         #run_command(['intensity-normalize', 'zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         #run_command([intensity_norm_python, '-m', 'intensity_normalization.cli.zscore', t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
         
-        intensity_norm_exe = '/home/vhasfctangs1/pijp-frangi/normvenv/bin/fcm-normalize'
-        run_command([intensity_norm_exe, t1_bc_brainextract, '-o', t1_bc_brainextract_norm])
-        print("finished intensity normalization")
-
         #### everything works except the matlab part
 
         #break  # only do one for testing
