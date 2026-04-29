@@ -7,6 +7,7 @@ import nibabel as nib
 import gzip
 from pathlib import Path
 import shutil
+import glob
 
 from pijp import util
 from pijp.repositories import ProcessingLog
@@ -152,7 +153,7 @@ class PreprocessSubject(BaseStep):
     def N4Bias(self,input,output):
         cmd = f'N4BiasFieldCorrection -i {input} -o {output}'
         self.commands.ants(cmd)
-    
+
     def intensitynorm(self,input,output):
         normcommand = '/home/vhasfctangs1/pijp-frangi/normvenv/bin/fcm-normalize'
         cmd = f'{normcommand} {input} -o {output}'
@@ -211,8 +212,16 @@ class PreprocessSubject(BaseStep):
 
         #os.makedirs(output_dir,exist_ok=True)    # in case it doesn't exist
 
-        # find the t1s and stuff
-        t1 = [os.path.join(self.subj_dir,t1) for t1 in os.listdir(self.subj_dir) if t1.endswith('.T1.nii.gz')][0]
+        # Find the t1.
+        # t1 = [os.path.join(self.subj_dir,t1) for t1 in os.listdir(self.subj_dir) if t1.endswith('.T1.nii.gz')][0]
+        t1 = glob.glob(os.path.join(self.subj_dir, '*.T1.nii.gz'))
+        if len(t1) < 1:
+            raise ProcessingError(f"T1 not found in:{self.subj_dir}")
+        elif len(t1) > 1:
+            raise ProcessingError(f"More than one T1 found in:{self.subj_dir}")
+        else:
+            t1 = t1[0]
+
         subjname = Path(t1).stem.replace('.T1.nii', '')   # redefine subject based on full image name
         shutil.copy(t1,os.path.join(self.output_folder,subjname + '-T1raw.nii.gz'))
         self.t1raw = os.path.join(self.output_folder, subjname + '-T1raw.nii.gz')
@@ -222,11 +231,11 @@ class PreprocessSubject(BaseStep):
         shutil.copy(flair,os.path.join(self.output_folder,subjname + '-FLAIRraw.nii.gz'))
         self.flairraw = os.path.join(self.output_folder, subjname + '-FLAIRraw.nii.gz')
         print('flair was copied over')
-        
+
         # Check T1 exists
         if not os.path.exists(t1):
             raise FileNotFoundError(f"T1 not found: {t1}")
-        
+
         # Check flair exists
         if not os.path.exists(flair):
             raise FileNotFoundError(f"flair not found: {flair}")
@@ -234,7 +243,7 @@ class PreprocessSubject(BaseStep):
         # Get the full path to the preprocessing script
         # Assumes it's in the same directory as this script
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        
+
         spm12_path = '/opt/mathworks/MatlabToolkits/spm12_r7219'
 
         t1_bc = os.path.join(self.output_folder,subjname+'-T1bc.nii.gz')
