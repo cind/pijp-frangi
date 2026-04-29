@@ -12,5 +12,7 @@ for subject in os.listdir(input_dir):
         failed.append(subject)
 
 print(f"Failed/incomplete subjects: {len(failed)}")
-for s in failed:
-    print(s)
+with open('./redo_subjects.txt', 'w') as f:
+    for s in failed:
+        print(s)
+        f.write(f'{s}\n')
