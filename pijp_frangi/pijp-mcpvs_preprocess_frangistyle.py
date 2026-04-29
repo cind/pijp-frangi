@@ -215,12 +215,12 @@ class PreprocessSubject(BaseStep):
         t1 = [os.path.join(self.subj_dir,t1) for t1 in os.listdir(self.subj_dir) if t1.endswith('.T1.nii.gz')][0]
         subjname = Path(t1).stem.replace('.T1.nii', '')   # redefine subject based on full image name
         shutil.copy(t1,os.path.join(self.output_folder,subjname + '-T1raw.nii.gz'))
-        t1 = os.path.join(self.output_folder, subjname + '-T1raw.nii.gz')
+        self.t1raw = os.path.join(self.output_folder, subjname + '-T1raw.nii.gz')
         print('t1 was copied over')
 
         flair = [os.path.join(self.subj_dir,flair) for flair in os.listdir(self.subj_dir) if flair.endswith('.FLAIR.nii.gz')][0]
         shutil.copy(flair,os.path.join(self.output_folder,subjname + '-FLAIRraw.nii.gz'))
-        flair = os.path.join(self.output_folder, subjname + '-FLAIRraw.nii.gz')
+        self.flairraw = os.path.join(self.output_folder, subjname + '-FLAIRraw.nii.gz')
         print('flair was copied over')
         
         # Check T1 exists
@@ -237,13 +237,22 @@ class PreprocessSubject(BaseStep):
         
         spm12_path = '/opt/mathworks/MatlabToolkits/spm12_r7219'
 
-        self.N4Bias(self.t1raw, self.outputt1)
-        self.N4Bias(self.flairraw, self.outputflair)
-        self.register(self.flairoutput,self.outputt1,self.registeredflair)
-        matlab_script = self.spm12_brain_extract(self.t1_path, spm12_path, self.output_mask, self.output_brain )
-        self.matlab(matlab_script)
-        self.intensitynorm(self.output_brain,self.output_brain_norm)
+        t1_bc = os.path.join(self.output_folder,subjname+'-T1bc.nii.gz')
+        self.N4Bias(self.t1raw, t1_bc)
 
+        flair_bc = os.path.join(self.output_folder,subjname+'-FLAIRbc.nii.gz')
+        self.N4Bias(self.flairraw, flair_bc)
+
+        flair_bcreg = os.path.join(self.output_folder,subjname+'-FLAIRbcreg.nii.gz')
+        self.register(flair_bc,t1_bc,flair_bcreg)
+
+        t1_bc_brainextract = os.path.join(self.output_folder,subjname+'-T1bcbrainmask.nii.gz')
+        brain_mask = os.path.join(self.output_folder,subjname+'-brainmask.nii.gz')
+        matlab_script = self.spm12_brain_extract(t1_bc, spm12_path, brain_mask, t1_bc_brainextract)
+        self.matlab(matlab_script)
+
+        t1_bc_brainextract_norm = os.path.join(self.output_folder,subjname+'-T1bcbrainmask_norm.nii.gz')
+        self.intensitynorm(t1_bc_brainextract,t1_bc_brainextract_norm)
 
 
 def run():
