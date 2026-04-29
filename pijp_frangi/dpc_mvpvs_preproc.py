@@ -182,9 +182,8 @@ class PreprocessSubject(BaseStep):
         # Get the full path to the preprocessing script
         # Assumes it's in the same directory as this script
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        preprocess_script = os.path.join(script_dir, 'grid_mcpvs_preprocessing.py')
-
-        self.commands.matlab(process_script)
+        matlab_script = self.spm12_brain_extract(args)
+        self.commands.matlab(matlab_script)
 
 
 def run():
