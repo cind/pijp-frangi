@@ -9,7 +9,7 @@ folder_list = [os.path.join(parent,s) for s in os.listdir(parent) if not s.start
 subjname_list = [s for s in os.listdir(parent) if not s.startswith('.')]
 
 for subj_dir,name in zip(folder_list,subjname_list):
-    output_dir = os.path.join(destination,subj_dir)
+    output_dir = os.path.join(destination,name)
     os.makedirs(output_dir,exist_ok=True)    # in case it doesn't exist
     # files I need: t1, talairach, raw flair, wmmask
     #t1 = os.path.join(subj_dir, subject + '.T1.nii.gz')
