@@ -1,6 +1,6 @@
 import os
 import shutil
-import Path
+#import Path
 
 parent = '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed3'
 destination = '/m/Researchers/SerenaT/deeppvs/for_nnunet/gt_mcpvs_preprocessed3_t1flaironly'
