@@ -18,9 +18,9 @@ FS_SUBJECTS_DIR = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects'
 def get_process_dir(project):
     return os.path.join(get_project_dir(project), PROCESS_TITLE)
 
-
-def get_case_dir(project, code):
-    cdir = os.path.join(get_process_dir(project), code)
+def get_case_dir(project, research_group, subject):
+    """Create directory organized by research group and subject"""
+    cdir = os.path.join(get_process_dir(project), research_group, subject)
     if not os.path.isdir(cdir):
         os.makedirs(cdir)
     return cdir
