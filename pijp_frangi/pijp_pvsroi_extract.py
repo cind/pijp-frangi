@@ -73,7 +73,7 @@ class PVSROIExtract(Step):
             self.subj_dir = self.original_code
         else:
             # Need to reconstruct from args or stored info
-            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_preprocessed'
+            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2'
             self.subj_dir = os.path.join(parent_dir, self.research_group, self.subject)
             
         # self.subj_dir = self.original_code
