@@ -36,10 +36,31 @@ class PVSROIExtract(Step):
     def __init__(self, project, code, args):
         self.original_code = code
 
-        # code is the full subject path: .../ADNI3_try2/<DX>/<subject>
-        parts = code.rstrip('/').split('/')
-        research_group = parts[-2]
-        subject = parts[-1]
+        # Parse research group and subject from the full path
+        if '/' in code:
+            parts = code.rstrip('/').split('/')
+            research_group = parts[-2]
+            subject = parts[-1]
+        else:
+            # # Fallback if only subject name is passed
+            # safe_code = code
+            # research_group = "UNKNOWN"
+            # subject = code
+            subject = code
+            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2'
+            dx_names = ['EMCI', 'AD', 'MCI', 'CN', 'LMCI', 'SMC']
+            
+            research_group = None
+            for group in dx_names:
+                potential_path = os.path.join(parent_dir, group, subject)
+                if os.path.isdir(potential_path):
+                    research_group = group
+                    break
+            
+            if research_group is None:
+                research_group = "UNKNOWN"
+                LOGGER.warning(f"Could not find research group for subject {subject}")
+
 
         super().__init__(project, code, args)
         self.datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
@@ -47,20 +68,28 @@ class PVSROIExtract(Step):
         self.research_group = research_group
         self.subject = subject
         self.code = self.subject
-
-        self.subj_dir = self.original_code
+        # Use original_code if available, otherwise reconstruct
+        if '/' in self.original_code:
+            self.subj_dir = self.original_code
+        else:
+            # Need to reconstruct from args or stored info
+            parent_dir = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_preprocessed'
+            self.subj_dir = os.path.join(parent_dir, self.research_group, self.subject)
+            
+        # self.subj_dir = self.original_code
         self.wmparc_path = os.path.join(FS_SUBJECTS_DIR, self.subject, 'mri', 'wmparc.mgz')
         # ASSUMPTION: standard FreeSurfer layout puts aseg.stats alongside wmparc.mgz
         # under stats/ rather than mri/ -- confirm this matches your FS output before
         # running the full queue.
         self.aseg_stats_path = os.path.join(FS_SUBJECTS_DIR, self.subject, 'stats', 'aseg.stats')
 
+
         LOGGER.info(f"Received code: {code}")
         LOGGER.info(f"Research group: {self.research_group}, Subject: {self.subject}")
         LOGGER.info(f"Subject directory: {self.subj_dir}")
         LOGGER.info(f"wmparc path: {self.wmparc_path}")
 
-        self.working_dir = get_case_dir(self.project, self.code)
+        self.working_dir = get_case_dir(self.project,  self.research_group, self.code)
 
     @classmethod
     def get_queue(cls, project_name):
