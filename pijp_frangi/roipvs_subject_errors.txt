@@ -1,0 +1,23 @@
+pijp.engine : INFO     ADNI3_pvsroi | /m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2/AD/ADNI3_003_S_6833y00_i1254307
+pijp_pvsroi_extract: INFO     Received code: /m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2/AD/ADNI3_003_S_6833y00_i1254307
+pijp_pvsroi_extract: INFO     Research group: AD, Subject: ADNI3_003_S_6833y00_i1254307
+pijp_pvsroi_extract: INFO     Subject directory: /m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2/AD/ADNI3_003_S_6833y00_i1254307
+pijp_pvsroi_extract: INFO     wmparc path: /m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects/ADNI3_003_S_6833y00_i1254307/mri/wmparc.mgz
+Traceback (most recent call last):
+  File "pijp_pvsroi_extract.py", line 152, in <module>
+    run_file(os.path.abspath(__file__))
+  File "/home/vhasfctangs1/pijp-frangi/venv/lib64/python3.6/site-packages/pijp/engine.py", line 15, in run_file
+    e.run()
+  File "/home/vhasfctangs1/pijp-frangi/venv/lib64/python3.6/site-packages/pijp/engine.py", line 75, in run
+    job = step(options.project, options.code, step_args)
+  File "/home/vhasfctangs1/pijp-frangi/pijp_frangi/pijp_pvsroi_extract.py", line 63, in __init__
+    self.working_dir = get_case_dir(self.project, self.code)
+  File "/home/vhasfctangs1/pijp-frangi/pijp_frangi/pijp_pvsroi_extract.py", line 23, in get_case_dir
+    cdir = os.path.join(get_process_dir(project), code)
+  File "/home/vhasfctangs1/pijp-frangi/pijp_frangi/pijp_pvsroi_extract.py", line 19, in get_process_dir
+    return os.path.join(get_project_dir(project), PROCESS_TITLE)
+  File "/home/vhasfctangs1/pijp-frangi/venv/lib64/python3.6/site-packages/pijp/core.py", line 20, in get_project_dir
+    project_dir = ProcessingLog().get_project_path(project_name)
+  File "/home/vhasfctangs1/pijp-frangi/venv/lib64/python3.6/site-packages/pijp/repositories.py", line 113, in get_project_path
+    settings = self.db.execute(sql, project_name=project_name)[0]
+IndexError: list index out of range
