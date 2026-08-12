@@ -26,19 +26,17 @@ from pvs_roi_extraction import (
     get_icv_from_mask,
 )
 
-
 def find_pvs_mask(subj_dir):
     """
     nnU-Net leaves input-channel files alongside the prediction output,
     e.g. PVS_226_0000.nii.gz / PVS_226_0001.nii.gz (channel suffixes) next
-    to the actual prediction PVS_226.nii.gz. Exclude anything ending in a
-    4-digit nnU-Net channel suffix before .nii.gz.
+    to the actual prediction PVS_226.nii.gz. Case numbers can themselves be
+    4 digits (e.g. PVS_2068.nii.gz), so excluding by suffix digit-length is
+    ambiguous -- instead match the prediction filename's structure directly:
+    exactly one number between "PVS_" and ".nii.gz", with nothing else.
     """
-    channel_suffix = re.compile(r"_\d{4}\.nii\.gz$")
-    candidates = [
-        f for f in os.listdir(subj_dir)
-        if f.startswith("PVS_") and f.endswith(".nii.gz") and not channel_suffix.search(f)
-    ]
+    prediction_pattern = re.compile(r"^PVS_\d+\.nii\.gz$")
+    candidates = [f for f in os.listdir(subj_dir) if prediction_pattern.match(f)]
     if not candidates:
         raise FileNotFoundError(f"No PVS_*.nii.gz prediction found in {subj_dir} (only channel files?)")
     if len(candidates) > 1:
