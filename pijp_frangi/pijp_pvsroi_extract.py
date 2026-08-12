@@ -1,0 +1,152 @@
+import os
+import logging
+import datetime
+import subprocess
+
+from pijp.repositories import ProcessingLog
+from pijp.core import Step, get_project_dir
+from pijp.engine import run_module, run_file
+from pijp.exceptions import ProcessingError
+
+LOGGER = logging.getLogger(__name__)
+PROCESS_TITLE = 'pvsroi_extractv1'
+
+SUBJECTS_ROOT = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2'
+FS_SUBJECTS_DIR = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects'
+
+
+def get_process_dir(project):
+    return os.path.join(get_project_dir(project), PROCESS_TITLE)
+
+
+def get_case_dir(project, code):
+    cdir = os.path.join(get_process_dir(project), code)
+    if not os.path.isdir(cdir):
+        os.makedirs(cdir)
+    return cdir
+
+
+class PVSROIExtract(Step):
+    process_name = PROCESS_TITLE
+    step_name = 'extract'
+    step_cli = 'extract'
+    cpu = 1
+    mem = '4G'
+
+    def __init__(self, project, code, args):
+        self.original_code = code
+
+        # code is the full subject path: .../ADNI3_try2/<DX>/<subject>
+        parts = code.rstrip('/').split('/')
+        research_group = parts[-2]
+        subject = parts[-1]
+
+        super().__init__(project, code, args)
+        self.datetime = datetime.datetime.now().strftime('%Y-%m-%d_%H%M%S')
+        self.project = project
+        self.research_group = research_group
+        self.subject = subject
+        self.code = self.subject
+
+        self.subj_dir = self.original_code
+        self.wmparc_path = os.path.join(FS_SUBJECTS_DIR, self.subject, 'mri', 'wmparc.mgz')
+        # ASSUMPTION: standard FreeSurfer layout puts aseg.stats alongside wmparc.mgz
+        # under stats/ rather than mri/ -- confirm this matches your FS output before
+        # running the full queue.
+        self.aseg_stats_path = os.path.join(FS_SUBJECTS_DIR, self.subject, 'stats', 'aseg.stats')
+
+        LOGGER.info(f"Received code: {code}")
+        LOGGER.info(f"Research group: {self.research_group}, Subject: {self.subject}")
+        LOGGER.info(f"Subject directory: {self.subj_dir}")
+        LOGGER.info(f"wmparc path: {self.wmparc_path}")
+
+        self.working_dir = get_case_dir(self.project, self.code)
+
+    @classmethod
+    def get_queue(cls, project_name):
+        """
+        Build the queue of all subjects to process: every <subject> folder
+        under SUBJECTS_ROOT/<DX>/, as long as a wmparc.mgz exists for it.
+        """
+        attempted_rows = ProcessingLog().get_step_attempted(project_name, PROCESS_TITLE, 'extract')
+        attempted = [row[1] for row in attempted_rows]
+
+        todo = []
+        dx_dirs = [d for d in os.listdir(SUBJECTS_ROOT)
+                   if not d.startswith('.') and os.path.isdir(os.path.join(SUBJECTS_ROOT, d))]
+
+        for dx in dx_dirs:
+            dx_path = os.path.join(SUBJECTS_ROOT, dx)
+            subjects = [s for s in os.listdir(dx_path)
+                        if not s.startswith('.') and os.path.isdir(os.path.join(dx_path, s))]
+
+            for subject in subjects:
+                subj_path = os.path.join(dx_path, subject)
+
+                wmparc_path = os.path.join(FS_SUBJECTS_DIR, subject, 'mri', 'wmparc.mgz')
+                if not os.path.exists(wmparc_path):
+                    LOGGER.warning(f"Skipping {subject}: no wmparc.mgz found at {wmparc_path}")
+                    continue
+
+                if subj_path not in attempted:
+                    todo.append({
+                        'ProjectName': project_name,
+                        'Code': subj_path,
+                    })
+
+        LOGGER.info(f"Found {len(todo)} subjects to process")
+        return todo
+
+    def run(self):
+        LOGGER.info(f"Processing subject: {self.subject}")
+        LOGGER.info(f"Subject directory: {self.subj_dir}")
+
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        worker_script = os.path.join(script_dir, 'grid_pvsroi_extraction.py')
+
+        import sys
+        python_exe = sys.executable
+        cmd = [
+            python_exe,
+            worker_script,
+            '--subj_dir', self.subj_dir,
+            '--subject', self.subject,
+            '--research_group', self.research_group,
+            '--wmparc_path', self.wmparc_path,
+            '--aseg_stats_path', self.aseg_stats_path,
+        ]
+        LOGGER.info(f"Using Python: {python_exe}")
+        LOGGER.info(f"Running command: {' '.join(cmd)}")
+
+        try:
+            result = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                encoding='utf-8',
+                check=True
+            )
+            if result.stdout:
+                LOGGER.info(result.stdout)
+            if result.stderr:
+                LOGGER.warning(result.stderr)
+
+            LOGGER.info(f"Successfully processed {self.subject}")
+
+        except subprocess.CalledProcessError as e:
+            LOGGER.error(f"Processing failed for {self.subject}")
+            LOGGER.error(f"stdout: {e.stdout}")
+            LOGGER.error(f"stderr: {e.stderr}")
+            self.outcome = 'Error'
+            self.comments = f"PVS ROI extraction failed: {e.stderr}"
+            raise ProcessingError(f"PVS ROI extraction failed for {self.subject}")
+
+
+def run():
+    import sys
+    current_module = sys.modules[__name__]
+    run_module(current_module)
+
+
+if __name__ == "__main__":
+    run_file(os.path.abspath(__file__))

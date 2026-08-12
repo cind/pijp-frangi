@@ -349,7 +349,7 @@ class Stage(BaseStep):
         data = img.get_fdata()
         mask = np.zeros(np.shape(data))
 
-        seg = [10, 11, 12, 13, 26, 49, 50, 51, 52, 58]
+        seg = [10, 11, 12, 13, 26, 49, 50, 51, 52, 58]  ## thal, caudate, putamen, pallidum, accumbens
         wmh = 77
         wm = [2,41] # took these out 12/4/23
         # Do we need this if it should already not be included in the others?
