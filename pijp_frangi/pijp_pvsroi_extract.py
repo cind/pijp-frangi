@@ -9,7 +9,7 @@ from pijp.engine import run_module, run_file
 from pijp.exceptions import ProcessingError
 
 LOGGER = logging.getLogger(__name__)
-PROCESS_TITLE = 'pvsroi_extractv1'
+PROCESS_TITLE = 'pvsroi_extractv2'
 
 SUBJECTS_ROOT = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2'
 FS_SUBJECTS_DIR = '/m/InProcess/External/ADNI3_FSdn/Freesurfer/subjects'
