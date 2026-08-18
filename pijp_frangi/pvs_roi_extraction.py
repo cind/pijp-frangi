@@ -57,6 +57,10 @@ ROI_DEFINITIONS = {
     "lh_vdc":         [28],
     "rh_vdc":         [60],
     "brainstem":      [16],
+    "lh_centrum_semiovale": [5001],
+    "rh_centrum_semiovale": [5002],
+    "lh_insula": [3035],
+    "rh_insula": [4035],
 }
 
 # fixed ROI name -> integer ID map, built once so it's identical across subjects

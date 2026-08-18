@@ -12,7 +12,7 @@ import os
 import pandas as pd
 
 SUBJECTS_ROOT = '/m/Researchers/SerenaT/deeppvs/for_nnunet/ADNI3_try2'
-OUT_CSV = os.path.join(SUBJECTS_ROOT, 'pvs_roi_results.csv')
+OUT_CSV = os.path.join(SUBJECTS_ROOT, 'grand_PVS_report_roi_results.csv')
 
 
 def main():
